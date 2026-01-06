@@ -1,0 +1,54 @@
+import { getSession } from "@/lib/auth";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import GuestLinkForm from "@/app/(app)/admin/guest-links/GuestLinkForm";
+
+export default async function GuestLinksPage() {
+  const session = await getSession();
+  if (!session || session.role === "guest") {
+    return (
+      <div className="rounded-lg border bg-white p-6">
+        <h1 className="text-xl font-semibold">ゲストURL</h1>
+        <p className="mt-2 text-sm text-zinc-600">
+          ゲストユーザーは閲覧できません。
+        </p>
+      </div>
+    );
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { data: sites } = await supabase
+    .from("projects")
+    .select("project_id, site_name")
+    .or("is_deleted.is.false,is_deleted.is.null")
+    .order("site_name");
+
+  const { data: guestLinks } = await supabase
+    .from("guest_links")
+    .select("token, project_id, created_at, projects(site_name)")
+    .eq("is_deleted", false)
+    .order("created_at", { ascending: false });
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold">ゲストURL</h1>
+        <p className="text-sm text-zinc-600">
+          指定した現場のみ閲覧可能なゲストURLを発行します。
+        </p>
+      </div>
+      <GuestLinkForm
+        sites={sites ?? []}
+        baseUrl={baseUrl}
+        links={
+          guestLinks?.map((link) => ({
+            token: link.token,
+            projectId: link.project_id,
+            siteName: link.projects?.site_name ?? link.project_id,
+          })) ?? []
+        }
+      />
+    </div>
+  );
+}
