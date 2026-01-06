@@ -15,7 +15,8 @@ export default function AppShell({
   username: string | null;
 }) {
   const rawVersion = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0";
-  const appVersion = rawVersion.startsWith("v") ? rawVersion : `v${rawVersion}`;
+  const normalizedVersion = rawVersion.replace(/^v+/i, "");
+  const appVersion = `v${normalizedVersion}`;
   const isGuest = role === "guest";
   const pathname = usePathname();
   const navItems = [
