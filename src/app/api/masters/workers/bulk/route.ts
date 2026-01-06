@@ -85,7 +85,8 @@ export async function POST(request: Request) {
 
   const errors: string[] = [];
   const resolvedRows = rows
-    .map((row, index) => {
+    .map(
+      (row, index): { id?: string; contractorId: string; workerName: string } | null => {
       const contractorKey = normalizeName(row.contractorName);
       const contractorId = contractorByName.get(contractorKey);
       if (!contractorId) {
@@ -97,9 +98,11 @@ export async function POST(request: Request) {
         contractorId,
         workerName: row.workerName.trim(),
       };
-    })
-    .filter((row): row is { id?: string; contractorId: string; workerName: string } =>
-      Boolean(row && row.workerName)
+    }
+    )
+    .filter(
+      (row): row is { id?: string; contractorId: string; workerName: string } =>
+        Boolean(row && row.workerName)
     );
 
   if (!resolvedRows.length) {
