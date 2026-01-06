@@ -73,12 +73,13 @@ function applyTableBorders(
   startCol: number,
   endCol: number
 ) {
-  const border: ExcelJS.Borders = {
+  const border = {
     top: { style: "thin", color: { argb: "FFD0D0D0" } },
     left: { style: "thin", color: { argb: "FFD0D0D0" } },
     bottom: { style: "thin", color: { argb: "FFD0D0D0" } },
     right: { style: "thin", color: { argb: "FFD0D0D0" } },
-  };
+    diagonal: { style: "thin", color: { argb: "FFD0D0D0" } },
+  } as ExcelJS.Borders;
   for (let row = startRow; row <= endRow; row += 1) {
     for (let col = startCol; col <= endCol; col += 1) {
       const cell = worksheet.getCell(row, col);
@@ -269,14 +270,26 @@ export async function GET(request: Request) {
   });
 
   const workbook = new ExcelJS.Workbook();
-  workbook.views = [{ activeTab: 0 }];
+  workbook.views = [
+    {
+      activeTab: 0,
+      firstSheet: 0,
+      visibility: "visible",
+      x: 0,
+      y: 0,
+      width: 12000,
+      height: 8000,
+    },
+  ];
 
   const titleText = `${selectedSite?.site_name ?? ""} / ${rangeLabel}`;
 
   const summarySheet = workbook.addWorksheet("業者別人数", {
-    views: [{ state: "pageLayout", zoomScale: 90, showGridLines: false }],
+    views: [
+      { state: "normal", style: "pageLayout", zoomScale: 90, showGridLines: false },
+    ],
     pageSetup: {
-      paperSize: 9,
+      paperSize: 9 as ExcelJS.PaperSize,
       orientation: "landscape",
       fitToPage: true,
       fitToWidth: 1,
@@ -310,9 +323,11 @@ export async function GET(request: Request) {
   }
 
   const dailySheet = workbook.addWorksheet("日別入場一覧", {
-    views: [{ state: "pageLayout", zoomScale: 90, showGridLines: false }],
+    views: [
+      { state: "normal", style: "pageLayout", zoomScale: 90, showGridLines: false },
+    ],
     pageSetup: {
-      paperSize: 8,
+      paperSize: 8 as ExcelJS.PaperSize,
       orientation: "landscape",
       fitToPage: false,
       scale: 100,
@@ -447,15 +462,18 @@ export async function GET(request: Request) {
     });
     manualBreaks.forEach((row) => {
       const targetRow = dailySheet.getRow(row);
-      targetRow.pageBreak = true;
       if (typeof targetRow.addPageBreak === "function") {
         targetRow.addPageBreak();
       }
     });
   }
 
-  summarySheet.views = [{ state: "pageLayout", zoomScale: 90, showGridLines: false }];
-  dailySheet.views = [{ state: "pageLayout", zoomScale: 90, showGridLines: false }];
+  summarySheet.views = [
+    { state: "normal", style: "pageLayout", zoomScale: 90, showGridLines: false },
+  ];
+  dailySheet.views = [
+    { state: "normal", style: "pageLayout", zoomScale: 90, showGridLines: false },
+  ];
 
   const buffer = await workbook.xlsx.writeBuffer();
   const output = Buffer.isBuffer(buffer)

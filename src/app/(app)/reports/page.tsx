@@ -89,7 +89,8 @@ export default async function ReportsPage({
     );
   }
 
-  const guestProjectId = session.role === "guest" ? session.guestProjectId : null;
+  const guestProjectId =
+    session.role === "guest" ? session.guestProjectId ?? null : null;
   const sitesQuery = supabase
     .from("projects")
     .select("project_id, site_name, start_date, end_date")

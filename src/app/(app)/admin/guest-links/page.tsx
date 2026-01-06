@@ -45,7 +45,7 @@ export default async function GuestLinksPage() {
           guestLinks?.map((link) => ({
             token: link.token,
             projectId: link.project_id,
-            siteName: link.projects?.site_name ?? link.project_id,
+            siteName: link.projects?.[0]?.site_name ?? link.project_id,
           })) ?? []
         }
       />

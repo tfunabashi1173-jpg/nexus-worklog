@@ -62,6 +62,12 @@ type EntryRow = {
   workTypeText: string;
 };
 
+type SortedEntryRow = {
+  order: number;
+  row: EntryRow;
+  isNexus: boolean;
+};
+
 const DEFAULT_ROWS = 1;
 
 const CORPORATE_TOKENS = [
@@ -421,7 +427,8 @@ export default function AttendanceForm({
         setInitialRows(emptyRows);
         return;
       }
-      const nextRows = entries.map((entry: any, order: number) => {
+      const nextRows: SortedEntryRow[] = entries.map(
+        (entry: any, order: number): SortedEntryRow => {
         const nexusMemo = parseNexusMemo(entry.work_type_text ?? null);
         const isNexus = Boolean(nexusMemo);
         const matchUser = nexusMemo

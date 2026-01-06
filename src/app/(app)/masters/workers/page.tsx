@@ -13,7 +13,7 @@ type WorkerRow = {
   id: string;
   name: string;
   contractor_id: string;
-  partners: { name: string } | null;
+  partners: { name: string }[] | null;
 };
 
 const CORPORATE_TOKENS = [

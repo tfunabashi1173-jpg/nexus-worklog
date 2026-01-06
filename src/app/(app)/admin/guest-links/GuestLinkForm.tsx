@@ -63,15 +63,16 @@ export default function GuestLinkForm({
         ? `${window.location.origin}${data.url}`
         : data.url ?? null;
     setLink(nextUrl);
-    if (data.token) {
+    if (typeof data.token === "string") {
+      const token = data.token;
       setLinkItems((prev) => {
-        if (prev.some((item) => item.token === data.token)) {
+        if (prev.some((item) => item.token === token)) {
           return prev;
         }
         const site = sites.find((item) => item.project_id === projectId);
         return [
           {
-            token: data.token,
+            token,
             projectId,
             siteName: site?.site_name ?? projectId,
           },
