@@ -8,6 +8,8 @@ import {
 import WorkersFilterForm from "@/components/WorkersFilterForm";
 import AutoDismissAlert from "@/components/AutoDismissAlert";
 import LogArea from "@/components/LogArea";
+import WorkersBulkEditor from "@/components/WorkersBulkEditor";
+import WorkersTabs from "@/components/WorkersTabs";
 
 type WorkerRow = {
   id: string;
@@ -49,6 +51,7 @@ type SearchParams = {
   error?: string;
   success?: string;
   contractor?: string;
+  tab?: string;
 };
 
 export default async function WorkersPage({
@@ -75,9 +78,6 @@ export default async function WorkersPage({
     .from("workers")
     .select("id, name, contractor_id, partners(name)")
     .or("id_deleted.is.false,id_deleted.is.null");
-  if (contractorFilter) {
-    workersQuery.eq("contractor_id", contractorFilter);
-  }
 
   const [{ data: workers }, { data: contractors }] = await Promise.all([
     workersQuery,
@@ -134,117 +134,135 @@ export default async function WorkersPage({
         <h1 className="text-2xl font-semibold">作業員</h1>
         <p className="text-sm text-zinc-600">協力業者に紐付く作業員を管理します。</p>
       </div>
-      <LogArea>
-        {(errorMessage || successMessage) && (
-          <AutoDismissAlert
-            message={errorMessage ?? successMessage ?? ""}
-            tone={errorMessage ? "error" : "success"}
-          />
-        )}
-      </LogArea>
+      <WorkersTabs
+        initialTab={resolvedParams?.tab === "bulk" ? "bulk" : "normal"}
+        normalContent={
+          <div className="space-y-6">
+            <LogArea>
+              {(errorMessage || successMessage) && (
+                <AutoDismissAlert
+                  message={errorMessage ?? successMessage ?? ""}
+                  tone={errorMessage ? "error" : "success"}
+                />
+              )}
+            </LogArea>
 
-      <form action={createWorker} className="rounded-lg border bg-white p-4">
-        <h2 className="text-lg font-semibold">新規登録</h2>
-        <div className="mt-3 grid gap-3 md:grid-cols-3">
-          <select
-            name="contractorId"
-            className="rounded border border-zinc-300 px-3 py-2 text-sm"
-            required
-          >
-            <option value="">協力業者を選択</option>
-            {contractors?.map((contractor) => (
-              <option key={contractor.partner_id} value={contractor.partner_id}>
-                {stripLegalSuffix(contractor.name)}
-              </option>
-            ))}
-          </select>
-          <input
-            name="name"
-            placeholder="作業員名"
-            className="rounded border border-zinc-300 px-3 py-2 text-sm"
-            required
-          />
-          <button
-            type="submit"
-            className="rounded bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition-all duration-150 ease-out hover:bg-zinc-800 active:scale-95"
-          >
-            登録
-          </button>
-        </div>
-      </form>
-
-      <WorkersFilterForm
-        contractors={contractorOptions}
-        contractorFilter={contractorFilter}
-      />
-
-      <div className="overflow-x-auto rounded-lg border bg-white">
-        <table className="w-full min-w-[720px] text-left text-sm">
-          <thead className="bg-zinc-50">
-            <tr>
-              <th className="px-4 py-2">協力業者</th>
-              <th className="px-4 py-2">作業員名</th>
-              <th className="px-4 py-2">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedWorkers.map((worker) => {
-              const row = worker as WorkerRow;
-              return (
-                <tr key={row.id} className="border-t">
-                  <td className="px-4 py-2">
-                    <select
-                      name="contractorId"
-                      defaultValue={row.contractor_id}
-                      className="rounded border border-zinc-300 px-2 py-1"
-                      form={`worker-${row.id}`}
+            <form action={createWorker} className="rounded-lg border bg-white p-4">
+              <h2 className="text-lg font-semibold">新規登録</h2>
+              <div className="mt-3 grid gap-3 md:grid-cols-3">
+                <select
+                  name="contractorId"
+                  className="rounded border border-zinc-300 px-3 py-2 text-sm"
+                  required
+                >
+                  <option value="">協力業者を選択</option>
+                  {contractors?.map((contractor) => (
+                    <option
+                      key={contractor.partner_id}
+                      value={contractor.partner_id}
                     >
-                      {contractors?.map((contractor) => (
-                        <option
-                          key={contractor.partner_id}
-                          value={contractor.partner_id}
-                        >
-                          {stripLegalSuffix(contractor.name)}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="px-4 py-2">
-                    <form id={`worker-${row.id}`} action={updateWorker}>
-                      <input type="hidden" name="workerId" value={row.id} />
-                      <input
-                        name="name"
-                        defaultValue={row.name}
-                        className="w-full rounded border border-zinc-300 px-2 py-1"
-                      />
-                    </form>
-                  </td>
-                  <td className="px-4 py-2">
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="submit"
-                        form={`worker-${row.id}`}
-                        className="rounded border border-zinc-300 px-3 py-1 text-xs transition-all duration-150 ease-out hover:bg-zinc-100 active:scale-95"
-                      >
-                        更新
-                      </button>
-                      <form action={deleteWorker}>
-                        <input type="hidden" name="workerId" value={row.id} />
-                        <button
-                          type="submit"
-                          className="rounded border border-red-300 px-3 py-1 text-xs text-red-600 transition-all duration-150 ease-out hover:bg-red-50 active:scale-95"
-                        >
-                          削除
-                        </button>
-                      </form>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                      {stripLegalSuffix(contractor.name)}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  name="name"
+                  placeholder="作業員名"
+                  className="rounded border border-zinc-300 px-3 py-2 text-sm"
+                  required
+                />
+                <button
+                  type="submit"
+                  className="rounded bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition-all duration-150 ease-out hover:bg-zinc-800 active:scale-95"
+                >
+                  登録
+                </button>
+              </div>
+            </form>
+
+            <WorkersFilterForm
+              contractors={contractorOptions}
+              contractorFilter={contractorFilter}
+            />
+
+            <div className="overflow-x-auto rounded-lg border bg-white">
+              <table className="w-full min-w-[720px] text-left text-sm">
+                <thead className="bg-zinc-50">
+                  <tr>
+                    <th className="px-4 py-2">協力業者</th>
+                    <th className="px-4 py-2">作業員名</th>
+                    <th className="px-4 py-2">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedWorkers.map((worker) => {
+                    const row = worker as WorkerRow;
+                    return (
+                      <tr key={row.id} className="border-t">
+                        <td className="px-4 py-2">
+                          <select
+                            name="contractorId"
+                            defaultValue={row.contractor_id}
+                            className="rounded border border-zinc-300 px-2 py-1"
+                            form={`worker-${row.id}`}
+                          >
+                            {contractors?.map((contractor) => (
+                              <option
+                                key={contractor.partner_id}
+                                value={contractor.partner_id}
+                              >
+                                {stripLegalSuffix(contractor.name)}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="px-4 py-2">
+                          <form id={`worker-${row.id}`} action={updateWorker}>
+                            <input type="hidden" name="workerId" value={row.id} />
+                            <input
+                              name="name"
+                              defaultValue={row.name}
+                              className="w-full rounded border border-zinc-300 px-2 py-1"
+                            />
+                          </form>
+                        </td>
+                        <td className="px-4 py-2">
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="submit"
+                              form={`worker-${row.id}`}
+                              className="rounded border border-zinc-300 px-3 py-1 text-xs transition-all duration-150 ease-out hover:bg-zinc-100 active:scale-95"
+                            >
+                              更新
+                            </button>
+                            <form action={deleteWorker}>
+                              <input type="hidden" name="workerId" value={row.id} />
+                              <button
+                                type="submit"
+                                className="rounded border border-red-300 px-3 py-1 text-xs text-red-600 transition-all duration-150 ease-out hover:bg-red-50 active:scale-95"
+                              >
+                                削除
+                              </button>
+                            </form>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+        bulkContent={
+          <div className="space-y-4">
+            <p className="text-sm text-zinc-600">
+              協力業者を選択して作業員名を4列で編集し、まとめて保存します。
+            </p>
+            <WorkersBulkEditor contractors={contractors ?? []} workers={workers ?? []} />
+          </div>
+        }
+      />
     </div>
   );
 }
