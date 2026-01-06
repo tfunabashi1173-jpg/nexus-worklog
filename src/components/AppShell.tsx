@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
 import SignOutButton from "@/components/SignOutButton";
-import packageJson from "../../package.json";
 
 export default function AppShell({
   children,
@@ -15,7 +14,7 @@ export default function AppShell({
   role: "admin" | "user" | "guest";
   username: string | null;
 }) {
-  const appVersion = process.env.NEXT_PUBLIC_APP_VERSION ?? packageJson.version;
+  const appVersion = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0";
   const isGuest = role === "guest";
   const pathname = usePathname();
   const navItems = [
