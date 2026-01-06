@@ -117,7 +117,11 @@ export default function WorkersBulkEditor({
     () => [
       ...visibleRows.map((item) => ({ ...item, isPlaceholder: false })),
       ...Array.from({ length: paddedCount }, () => ({
-        row: { contractorName: selectedContractorName, workerName: "" },
+        row: {
+          id: null,
+          contractorName: selectedContractorName,
+          workerName: "",
+        },
         index: null as number | null,
         isPlaceholder: true,
       })),
