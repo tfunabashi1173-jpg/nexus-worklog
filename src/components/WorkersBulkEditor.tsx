@@ -329,7 +329,7 @@ export default function WorkersBulkEditor({
           </p>
         )}
         {filterContractorId && (
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="min-w-[720px] grid gap-2 grid-cols-4">
             {displayRows.map(({ row, index }, visibleIndex) => (
               <input
                 key={`${row.id ?? "new"}-${index ?? `empty-${visibleIndex}`}`}
