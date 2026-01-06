@@ -552,7 +552,7 @@ export default function AttendanceForm({
             type="button"
             onClick={handleSaveDefaultSite}
             disabled={readOnly || isDefaultSite}
-            className="rounded bg-zinc-900 px-3 py-2 text-sm font-semibold text-white hover:bg-zinc-800 disabled:bg-zinc-300 disabled:text-zinc-500 disabled:cursor-not-allowed"
+            className="rounded bg-zinc-900 px-3 py-2 text-sm font-semibold text-white transition-all duration-150 ease-out hover:bg-zinc-800 active:scale-95 disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:text-zinc-500"
           >
             デフォルト現場に設定
           </button>
@@ -569,7 +569,7 @@ export default function AttendanceForm({
             type="button"
             onClick={() => handleAddRow()}
             disabled={readOnly}
-            className="rounded border border-zinc-300 px-3 py-1 text-sm hover:bg-zinc-100"
+            className="rounded border border-zinc-300 px-3 py-1 text-sm transition-all duration-150 ease-out hover:bg-zinc-100 active:scale-95"
           >
             業者を追加
           </button>
@@ -763,7 +763,7 @@ export default function AttendanceForm({
                             type="button"
                             onClick={() => handleAddRow(row.id)}
                             disabled={readOnly || !row.contractorId}
-                            className="h-7 w-7 rounded border border-zinc-400 text-sm hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="h-7 w-7 rounded border border-zinc-400 text-sm transition-all duration-150 ease-out hover:bg-zinc-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
                             aria-label="行を追加"
                           >
                             +
@@ -772,7 +772,7 @@ export default function AttendanceForm({
                             type="button"
                             onClick={() => handleRemoveRow(row.id)}
                             disabled={readOnly}
-                            className="h-7 w-7 rounded border border-zinc-400 text-sm hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="h-7 w-7 rounded border border-zinc-400 text-sm transition-all duration-150 ease-out hover:bg-zinc-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
                             aria-label="行を削除"
                           >
                             -
@@ -790,7 +790,7 @@ export default function AttendanceForm({
             type="button"
             onClick={handleSave}
             disabled={saving || readOnly || !isDirty}
-            className="rounded bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-50"
+            className="rounded bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition-all duration-150 ease-out hover:bg-zinc-800 active:scale-95 disabled:opacity-50"
           >
             {saving ? "保存中..." : "保存"}
           </button>

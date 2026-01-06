@@ -53,13 +53,21 @@ export default function AppShell({
                     key={item.href}
                     href={item.href}
                     aria-current={isActive ? "page" : undefined}
-                    className={`rounded px-2 py-1 ${
+                    className={`group relative rounded px-2 py-1 transition-all duration-150 ease-out active:scale-95 ${
                       isActive
                         ? "bg-zinc-900 text-white"
                         : "text-zinc-600 hover:bg-zinc-100"
                     }`}
                   >
                     {item.label}
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none absolute -bottom-0.5 left-2 right-2 h-0.5 rounded bg-current transition-all duration-200 ${
+                        isActive
+                          ? "opacity-100 scale-x-100"
+                          : "opacity-0 scale-x-0 group-hover:opacity-80 group-hover:scale-x-100"
+                      }`}
+                    />
                   </Link>
                 );
               })}

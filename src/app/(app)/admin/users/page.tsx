@@ -74,7 +74,7 @@ export default async function UsersPage() {
         </div>
         <button
           type="submit"
-          className="mt-3 rounded bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800"
+          className="mt-3 rounded bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition-all duration-150 ease-out hover:bg-zinc-800 active:scale-95"
         >
           作成
         </button>
@@ -120,7 +120,7 @@ export default async function UsersPage() {
                     <button
                       type="submit"
                       form={`update-${user.user_id}`}
-                      className="rounded border border-zinc-300 px-3 py-1 text-xs hover:bg-zinc-100"
+                      className="rounded border border-zinc-300 px-3 py-1 text-xs transition-all duration-150 ease-out hover:bg-zinc-100 active:scale-95"
                     >
                       更新
                     </button>
@@ -128,7 +128,7 @@ export default async function UsersPage() {
                     <input type="hidden" name="userId" value={user.user_id} />
                     <button
                       type="submit"
-                      className="rounded border border-red-300 px-3 py-1 text-xs text-red-600 hover:bg-red-50"
+                      className="rounded border border-red-300 px-3 py-1 text-xs text-red-600 transition-all duration-150 ease-out hover:bg-red-50 active:scale-95"
                     >
                       削除
                     </button>

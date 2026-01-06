@@ -153,7 +153,7 @@ export default function GuestLinkForm({
           <button
             type="submit"
             disabled={saving}
-            className="h-fit self-end rounded bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-50"
+            className="h-fit self-end rounded bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition-all duration-150 ease-out hover:bg-zinc-800 active:scale-95 disabled:opacity-50"
           >
             {saving ? "発行中..." : "発行"}
           </button>
@@ -201,14 +201,14 @@ export default function GuestLinkForm({
                 <button
                   type="button"
                   onClick={() => handleCopy(item.token)}
-                  className="rounded border border-zinc-300 px-3 py-1 text-xs hover:bg-zinc-100"
+                  className="rounded border border-zinc-300 px-3 py-1 text-xs transition-all duration-150 ease-out hover:bg-zinc-100 active:scale-95"
                 >
                   コピー
                 </button>
                 <button
                   type="button"
                   onClick={() => handleDelete(item.token)}
-                  className="rounded border border-red-300 px-3 py-1 text-xs text-red-600 hover:bg-red-50"
+                  className="rounded border border-red-300 px-3 py-1 text-xs text-red-600 transition-all duration-150 ease-out hover:bg-red-50 active:scale-95"
                 >
                   削除
                 </button>

@@ -113,29 +113,32 @@ export default function ReportsControls({
 
   return (
     <div className="space-y-3 rounded-lg border bg-white p-4">
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <button
-          type="button"
-          onClick={() => handleViewChange("month")}
-          className={`rounded px-3 py-1 ${
-            mode === "month"
-              ? "bg-zinc-900 text-white"
-              : "border border-zinc-300 text-zinc-600"
-          }`}
-        >
-          月集計
-        </button>
-        <button
-          type="button"
-          onClick={() => handleViewChange("period")}
-          className={`rounded px-3 py-1 ${
-            mode === "period"
-              ? "bg-zinc-900 text-white"
-              : "border border-zinc-300 text-zinc-600"
-          }`}
-        >
-          期間集計
-        </button>
+      <div className="flex flex-wrap items-center text-sm">
+        <div className="relative inline-flex rounded-full border border-zinc-300 bg-white p-1">
+          <div
+            className={`absolute inset-y-1 w-[calc(50%-4px)] rounded-full bg-zinc-900 transition-transform duration-200 ease-out ${
+              mode === "period" ? "translate-x-full" : "translate-x-0"
+            }`}
+          />
+          <button
+            type="button"
+            onClick={() => handleViewChange("month")}
+            className={`relative z-10 rounded-full px-4 py-1 transition-all duration-150 ease-out active:scale-95 ${
+              mode === "month" ? "text-white" : "text-zinc-600"
+            }`}
+          >
+            月集計
+          </button>
+          <button
+            type="button"
+            onClick={() => handleViewChange("period")}
+            className={`relative z-10 rounded-full px-4 py-1 transition-all duration-150 ease-out active:scale-95 ${
+              mode === "period" ? "text-white" : "text-zinc-600"
+            }`}
+          >
+            期間集計
+          </button>
+        </div>
       </div>
       <div className="flex flex-wrap items-end gap-4">
         <div>

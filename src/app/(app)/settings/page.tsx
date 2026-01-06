@@ -50,7 +50,7 @@ export default function SettingsPage() {
           <button
             type="submit"
             disabled={saving}
-            className="mt-3 rounded bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-50"
+            className="mt-3 rounded bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition-all duration-150 ease-out hover:bg-zinc-800 active:scale-95 disabled:opacity-50"
           >
             {saving ? "更新中..." : "更新"}
           </button>
