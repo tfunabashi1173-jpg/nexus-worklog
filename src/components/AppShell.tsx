@@ -75,7 +75,7 @@ export default function AppShell({
       </main>
       <footer className="fixed bottom-0 left-0 right-0 border-t bg-white">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-3 text-xs text-zinc-500">
-          <span>v{appVersion}</span>
+          <span>{appVersion}</span>
           <span>© 2025 株式会社デザイン・オフィス・ネクサス</span>
         </div>
       </footer>
