@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { getSessionCookie } from "@/lib/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+const getTodayString = () =>
+  new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" });
+
 type EntryPayload = {
   entry_date: string;
   project_id: string;
@@ -16,9 +19,6 @@ export async function POST(request: Request) {
   const session = await getSessionCookie();
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
-  if (session.role === "guest" && !session.guestCanEdit) {
-    return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
   const { entries, deletedIds } = (await request.json()) as {
@@ -43,6 +43,33 @@ export async function POST(request: Request) {
     );
   }
 
+  const supabase = createSupabaseServerClient();
+  if (session.role === "guest") {
+    const token = session.guestToken;
+    if (!token) {
+      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    }
+    const today = getTodayString();
+    const { data: guestLink, error: guestError } = await supabase
+      .from("guest_links")
+      .select("project_id, is_deleted, expires_at, can_edit_attendance")
+      .eq("token", token)
+      .maybeSingle();
+    if (
+      guestError ||
+      !guestLink ||
+      guestLink.is_deleted ||
+      (guestLink.expires_at && guestLink.expires_at < today) ||
+      !guestLink.can_edit_attendance ||
+      (session.guestProjectId && guestLink.project_id !== session.guestProjectId)
+    ) {
+      if (guestLink?.expires_at && guestLink.expires_at < today) {
+        await supabase.from("guest_links").delete().eq("token", token);
+      }
+      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    }
+  }
+
   const uniqueMap = new Map<string, EntryPayload>();
   for (const entry of entries) {
     if (entry.worker_id) {
@@ -61,7 +88,6 @@ export async function POST(request: Request) {
   }
   const uniqueEntries = Array.from(uniqueMap.values());
 
-  const supabase = createSupabaseServerClient();
   const filteredEntries = uniqueEntries;
 
   if (deletedIds && deletedIds.length) {
@@ -156,9 +182,6 @@ export async function DELETE(request: Request) {
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  if (session.role === "guest" && !session.guestCanEdit) {
-    return NextResponse.json({ error: "forbidden" }, { status: 403 });
-  }
 
   const { searchParams } = new URL(request.url);
   const entryDate = searchParams.get("date") ?? "";
@@ -168,6 +191,31 @@ export async function DELETE(request: Request) {
   }
 
   const supabase = createSupabaseServerClient();
+  if (session.role === "guest") {
+    const token = session.guestToken;
+    if (!token) {
+      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    }
+    const today = getTodayString();
+    const { data: guestLink, error: guestError } = await supabase
+      .from("guest_links")
+      .select("project_id, is_deleted, expires_at, can_edit_attendance")
+      .eq("token", token)
+      .maybeSingle();
+    if (
+      guestError ||
+      !guestLink ||
+      guestLink.is_deleted ||
+      (guestLink.expires_at && guestLink.expires_at < today) ||
+      !guestLink.can_edit_attendance ||
+      (session.guestProjectId && guestLink.project_id !== session.guestProjectId)
+    ) {
+      if (guestLink?.expires_at && guestLink.expires_at < today) {
+        await supabase.from("guest_links").delete().eq("token", token);
+      }
+      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    }
+  }
   const { error } = await supabase
     .from("attendance_entries")
     .delete()

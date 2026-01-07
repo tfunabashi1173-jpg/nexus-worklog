@@ -51,6 +51,7 @@ export async function login(
       username: "ゲスト",
       role: "guest",
       guestProjectId: guestLink.project_id,
+      guestToken: guestToken,
       guestCanEdit: guestLink.can_edit_attendance ?? false,
     });
     redirect("/");

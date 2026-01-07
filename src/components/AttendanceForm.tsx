@@ -356,7 +356,11 @@ export default function AttendanceForm({
         { method: "DELETE" }
       );
       if (!response.ok) {
-        setMessage("当日のデータ削除に失敗しました。");
+        if (response.status === 403) {
+          setMessage("ゲストの編集権限がありません。");
+        } else {
+          setMessage("当日のデータ削除に失敗しました。");
+        }
         messageTimeoutRef.current = setTimeout(() => setMessage(null), 3000);
         setSaving(false);
         return;
@@ -412,7 +416,11 @@ export default function AttendanceForm({
     });
 
     if (!response.ok) {
-      setMessage("保存に失敗しました。再度お試しください。");
+      if (response.status === 403) {
+        setMessage("ゲストの編集権限がありません。");
+      } else {
+        setMessage("保存に失敗しました。再度お試しください。");
+      }
       messageTimeoutRef.current = setTimeout(() => setMessage(null), 3000);
       setSaving(false);
       return;

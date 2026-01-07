@@ -9,6 +9,7 @@ export type SessionData = {
   username: string | null;
   role: "admin" | "user" | "guest";
   guestProjectId?: string | null;
+  guestToken?: string | null;
   guestCanEdit?: boolean;
   exp: number;
 };
@@ -46,12 +47,14 @@ export async function createSessionCookie({
   username,
   role,
   guestProjectId,
+  guestToken,
   guestCanEdit,
 }: {
   userId: string;
   username: string | null;
   role: "admin" | "user" | "guest";
   guestProjectId?: string | null;
+  guestToken?: string | null;
   guestCanEdit?: boolean;
 }) {
   const exp = Math.floor(Date.now() / 1000) + SESSION_TTL_DAYS * 24 * 60 * 60;
@@ -60,6 +63,7 @@ export async function createSessionCookie({
     username,
     role,
     guestProjectId: guestProjectId ?? null,
+    guestToken: guestToken ?? null,
     guestCanEdit: Boolean(guestCanEdit),
     exp,
   };
