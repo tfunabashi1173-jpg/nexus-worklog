@@ -323,7 +323,7 @@ export default function ReportsControls({
                   type="date"
                   value={from}
                   onChange={(event) => handleFromChange(event.target.value)}
-                  className="mt-1 w-[150px] rounded border border-zinc-300 px-2 py-2 text-sm"
+                  className="mt-1 h-9 w-[130px] rounded border border-zinc-300 px-2 text-sm"
                 />
               </div>
               <div>
@@ -333,10 +333,10 @@ export default function ReportsControls({
                   type="date"
                   value={to}
                   onChange={(event) => handleToChange(event.target.value)}
-                  className="mt-1 w-[150px] rounded border border-zinc-300 px-2 py-2 text-sm"
+                  className="mt-1 h-9 w-[130px] rounded border border-zinc-300 px-2 text-sm"
                 />
               </div>
-              <div className="w-[180px]">
+              <div className="w-[160px]">
                 <label className="text-sm font-medium">業者</label>
                 <select
                   value={contractorId}
@@ -348,7 +348,7 @@ export default function ReportsControls({
                     }
                     pushParams({ contractor: value, worker: "" });
                   }}
-                  className="mt-1 w-full rounded border border-zinc-300 px-2 py-2 text-sm"
+                  className="mt-1 h-9 w-full rounded border border-zinc-300 px-2 text-sm"
                 >
                   <option value="">全て</option>
                   {contractorOptions.map((option) => (
@@ -358,7 +358,7 @@ export default function ReportsControls({
                   ))}
                 </select>
               </div>
-              <div className="w-[180px]">
+              <div className="w-[150px]">
                 <label className="text-sm font-medium">作業員</label>
                 <select
                   value={workerName}
@@ -367,7 +367,7 @@ export default function ReportsControls({
                     setWorkerName(value);
                     pushParams({ worker: value });
                   }}
-                  className="mt-1 w-full rounded border border-zinc-300 px-2 py-2 text-sm"
+                  className="mt-1 h-9 w-full rounded border border-zinc-300 px-2 text-sm"
                 >
                   <option value="">全て</option>
                   {workerOptions.map((option) => (
@@ -395,7 +395,7 @@ export default function ReportsControls({
                     }
                     pushParams({ category: value, workType: "" });
                   }}
-                  className="mt-1 w-[180px] rounded border border-zinc-300 px-2 py-2 text-sm"
+                  className="mt-1 h-9 w-[150px] rounded border border-zinc-300 px-2 text-sm"
                 >
                   <option value="">全て</option>
                   {workCategories.map((category) => (
@@ -414,7 +414,7 @@ export default function ReportsControls({
                     setWorkTypeId(value);
                     pushParams({ workType: value });
                   }}
-                  className="mt-1 w-[200px] rounded border border-zinc-300 px-2 py-2 text-sm"
+                  className="mt-1 h-9 w-[200px] rounded border border-zinc-300 px-2 text-sm"
                 >
                   <option value="">全て</option>
                   {availableWorkTypes.map((item) => (
@@ -437,7 +437,7 @@ export default function ReportsControls({
                     pushParams({ memo: value });
                   }}
                   placeholder="例: 仕上げ -手直し"
-                  className="mt-1 w-full rounded border border-zinc-300 px-2 py-2 text-sm"
+                  className="mt-1 h-9 w-full rounded border border-zinc-300 px-2 text-sm"
                 />
                 <p className="mt-1 text-xs text-zinc-500">
                   半角/全角スペース区切り。除外は「-除外語」。
@@ -453,7 +453,7 @@ export default function ReportsControls({
                     setMemoMatch(value);
                     pushParams({ memoMatch: value });
                   }}
-                  className="mt-1 w-[160px] rounded border border-zinc-300 px-2 py-2 text-sm"
+                  className="mt-1 h-9 w-[160px] rounded border border-zinc-300 px-2 text-sm"
                 >
                   <option value="partial">部分一致</option>
                   <option value="exact">完全一致</option>
