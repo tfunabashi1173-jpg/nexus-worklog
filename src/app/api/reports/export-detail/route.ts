@@ -176,21 +176,6 @@ export async function GET(request: Request) {
     }
     fromIndex += pageSize;
   }
-    supabase
-      .from("projects")
-      .select("project_id, site_name")
-      .eq("project_id", selectedSiteId)
-      .maybeSingle(),
-    supabase
-      .from("attendance_entries")
-      .select(
-        "entry_date, contractor_id, worker_id, work_type_text, partners(partner_id,name), workers(id,name), work_types(id,name,category_id, work_categories(name))"
-      )
-      .eq("project_id", selectedSiteId)
-      .gte("entry_date", fromValue)
-      .lte("entry_date", toValue)
-      .order("entry_date"),
-  ]);
 
   const terms = parseMemoTerms(memoValue);
   const rows = entries
