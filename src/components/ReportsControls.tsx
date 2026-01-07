@@ -315,7 +315,7 @@ export default function ReportsControls({
           </>
         ) : (
           <div className="w-full space-y-3">
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+            <div className="flex flex-wrap items-end gap-3">
               <div>
                 <label className="text-sm font-medium">開始日</label>
                 <input
@@ -323,7 +323,7 @@ export default function ReportsControls({
                   type="date"
                   value={from}
                   onChange={(event) => handleFromChange(event.target.value)}
-                  className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm"
+                  className="mt-1 w-[150px] rounded border border-zinc-300 px-2 py-2 text-sm"
                 />
               </div>
               <div>
@@ -333,8 +333,49 @@ export default function ReportsControls({
                   type="date"
                   value={to}
                   onChange={(event) => handleToChange(event.target.value)}
-                  className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm"
+                  className="mt-1 w-[150px] rounded border border-zinc-300 px-2 py-2 text-sm"
                 />
+              </div>
+              <div className="w-[180px]">
+                <label className="text-sm font-medium">業者</label>
+                <select
+                  value={contractorId}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setContractorId(value);
+                    if (workerName && !workerOptions.includes(workerName)) {
+                      setWorkerName("");
+                    }
+                    pushParams({ contractor: value, worker: "" });
+                  }}
+                  className="mt-1 w-full rounded border border-zinc-300 px-2 py-2 text-sm"
+                >
+                  <option value="">全て</option>
+                  {contractorOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="w-[180px]">
+                <label className="text-sm font-medium">作業員</label>
+                <select
+                  value={workerName}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setWorkerName(value);
+                    pushParams({ worker: value });
+                  }}
+                  className="mt-1 w-full rounded border border-zinc-300 px-2 py-2 text-sm"
+                >
+                  <option value="">全て</option>
+                  {workerOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="text-sm font-medium">カテゴリ</label>
@@ -354,7 +395,7 @@ export default function ReportsControls({
                     }
                     pushParams({ category: value, workType: "" });
                   }}
-                  className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm"
+                  className="mt-1 w-[180px] rounded border border-zinc-300 px-2 py-2 text-sm"
                 >
                   <option value="">全て</option>
                   {workCategories.map((category) => (
@@ -373,7 +414,7 @@ export default function ReportsControls({
                     setWorkTypeId(value);
                     pushParams({ workType: value });
                   }}
-                  className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm"
+                  className="mt-1 w-[200px] rounded border border-zinc-300 px-2 py-2 text-sm"
                 >
                   <option value="">全て</option>
                   {availableWorkTypes.map((item) => (
@@ -383,48 +424,9 @@ export default function ReportsControls({
                   ))}
                 </select>
               </div>
-              <div>
-                <label className="text-sm font-medium">業者</label>
-                <select
-                  value={contractorId}
-                  onChange={(event) => {
-                    const value = event.target.value;
-                    setContractorId(value);
-                    if (workerName && !workerOptions.includes(workerName)) {
-                      setWorkerName("");
-                    }
-                    pushParams({ contractor: value, worker: "" });
-                  }}
-                  className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm"
-                >
-                  <option value="">全て</option>
-                  {contractorOptions.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium">作業員</label>
-                <select
-                  value={workerName}
-                  onChange={(event) => {
-                    const value = event.target.value;
-                    setWorkerName(value);
-                    pushParams({ worker: value });
-                  }}
-                  className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm"
-                >
-                  <option value="">全て</option>
-                  {workerOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="md:col-span-2 lg:col-span-3">
+            </div>
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="w-[420px]">
                 <label className="text-sm font-medium">備考キーワード</label>
                 <input
                   type="text"
@@ -435,7 +437,7 @@ export default function ReportsControls({
                     pushParams({ memo: value });
                   }}
                   placeholder="例: 仕上げ -手直し"
-                  className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm"
+                  className="mt-1 w-full rounded border border-zinc-300 px-2 py-2 text-sm"
                 />
                 <p className="mt-1 text-xs text-zinc-500">
                   半角/全角スペース区切り。除外は「-除外語」。
@@ -451,7 +453,7 @@ export default function ReportsControls({
                     setMemoMatch(value);
                     pushParams({ memoMatch: value });
                   }}
-                  className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm"
+                  className="mt-1 w-[160px] rounded border border-zinc-300 px-2 py-2 text-sm"
                 >
                   <option value="partial">部分一致</option>
                   <option value="exact">完全一致</option>
