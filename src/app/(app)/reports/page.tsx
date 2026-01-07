@@ -250,6 +250,17 @@ export default async function ReportsPage({
     return parts.slice(1).join(" / ");
   };
 
+  const getCategoryName = (
+    workType: EntryRow["work_type"]
+  ) => {
+    if (!workType || !workType.work_categories) {
+      return "";
+    }
+    return Array.isArray(workType.work_categories)
+      ? workType.work_categories[0]?.name ?? ""
+      : (workType.work_categories as { name?: string }).name ?? "";
+  };
+
   const buildContractorCounts = (entriesToCount: EntryRow[]) => {
     const counts = new Map<string, { name: string; dayKeys: Set<string> }>();
     entriesToCount.forEach((entry) => {
@@ -469,7 +480,7 @@ export default async function ReportsPage({
         entryDate: entry.entry_date,
         contractorName,
         workerName,
-        categoryName: workType?.work_categories?.[0]?.name ?? "",
+        categoryName: getCategoryName(workType),
         workTypeName: workType?.name ?? "",
         memo: memoText,
       };
