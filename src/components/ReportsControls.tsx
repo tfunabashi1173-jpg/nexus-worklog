@@ -444,20 +444,23 @@ export default function ReportsControls({
                 </p>
               </div>
               <div>
-                <label className="text-sm font-medium">一致条件</label>
-                <select
-                  value={memoMatch}
-                  onChange={(event) => {
-                    const value =
-                      event.target.value === "exact" ? "exact" : "partial";
-                    setMemoMatch(value);
-                    pushParams({ memoMatch: value });
-                  }}
-                  className="mt-1 h-9 w-[160px] rounded border border-zinc-300 px-2 text-sm"
-                >
-                  <option value="partial">部分一致</option>
-                  <option value="exact">完全一致</option>
-                </select>
+                <label className="text-sm font-medium">&nbsp;</label>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-zinc-600">一致条件</span>
+                  <select
+                    value={memoMatch}
+                    onChange={(event) => {
+                      const value =
+                        event.target.value === "exact" ? "exact" : "partial";
+                      setMemoMatch(value);
+                      pushParams({ memoMatch: value });
+                    }}
+                    className="h-9 w-[160px] rounded border border-zinc-300 px-2 text-sm"
+                  >
+                    <option value="partial">部分一致</option>
+                    <option value="exact">完全一致</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
