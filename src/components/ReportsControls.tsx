@@ -19,6 +19,11 @@ type WorkType = {
   category_id: string | null;
 };
 
+type ContractorOption = {
+  id: string;
+  name: string;
+};
+
 type ViewMode = "month" | "period" | "detail";
 
 export default function ReportsControls({
@@ -29,12 +34,16 @@ export default function ReportsControls({
   toValue,
   categoryValue,
   workTypeValue,
+  contractorValue,
+  workerValue,
   memoValue,
   memoMatchValue,
   view,
   guestProjectId,
   workCategories,
   workTypes,
+  contractorOptions,
+  workerOptions,
 }: {
   sites: Site[];
   selectedSiteId: string;
@@ -43,12 +52,16 @@ export default function ReportsControls({
   toValue: string;
   categoryValue: string;
   workTypeValue: string;
+  contractorValue: string;
+  workerValue: string;
   memoValue: string;
   memoMatchValue: "exact" | "partial";
   view: ViewMode;
   guestProjectId: string | null;
   workCategories: WorkCategory[];
   workTypes: WorkType[];
+  contractorOptions: ContractorOption[];
+  workerOptions: string[];
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -58,6 +71,8 @@ export default function ReportsControls({
   const [to, setTo] = useState(toValue);
   const [categoryId, setCategoryId] = useState(categoryValue);
   const [workTypeId, setWorkTypeId] = useState(workTypeValue);
+  const [contractorId, setContractorId] = useState(contractorValue);
+  const [workerName, setWorkerName] = useState(workerValue);
   const [memo, setMemo] = useState(memoValue);
   const [memoMatch, setMemoMatch] = useState<"exact" | "partial">(
     memoMatchValue
@@ -90,6 +105,14 @@ export default function ReportsControls({
   }, [workTypeValue]);
 
   useEffect(() => {
+    setContractorId(contractorValue);
+  }, [contractorValue]);
+
+  useEffect(() => {
+    setWorkerName(workerValue);
+  }, [workerValue]);
+
+  useEffect(() => {
     setMemo(memoValue);
   }, [memoValue]);
 
@@ -104,6 +127,8 @@ export default function ReportsControls({
     to?: string;
     category?: string;
     workType?: string;
+    contractor?: string;
+    worker?: string;
     memo?: string;
     memoMatch?: "exact" | "partial";
     view?: ViewMode;
@@ -116,6 +141,8 @@ export default function ReportsControls({
     const toVal = next.to ?? to;
     const categoryVal = next.category ?? categoryId;
     const workTypeVal = next.workType ?? workTypeId;
+    const contractorVal = next.contractor ?? contractorId;
+    const workerVal = next.worker ?? workerName;
     const memoVal = next.memo ?? memo;
     const memoMatchVal = next.memoMatch ?? memoMatch;
 
@@ -131,6 +158,8 @@ export default function ReportsControls({
       if (toVal) params.set("to", toVal);
       if (categoryVal) params.set("category", categoryVal);
       if (workTypeVal) params.set("workType", workTypeVal);
+      if (contractorVal) params.set("contractor", contractorVal);
+      if (workerVal) params.set("worker", workerVal);
       if (memoVal) params.set("memo", memoVal);
       if (memoMatchVal) params.set("memoMatch", memoMatchVal);
     }
@@ -177,6 +206,8 @@ export default function ReportsControls({
         to: toValue,
         category: categoryValue,
         workType: workTypeValue,
+        contractor: contractorValue,
+        worker: workerValue,
         memo: memoValue,
         memoMatch: memoMatchValue,
       });
@@ -348,6 +379,47 @@ export default function ReportsControls({
                   {availableWorkTypes.map((item) => (
                     <option key={item.id} value={item.id}>
                       {item.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium">業者</label>
+                <select
+                  value={contractorId}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setContractorId(value);
+                    if (workerName && !workerOptions.includes(workerName)) {
+                      setWorkerName("");
+                    }
+                    pushParams({ contractor: value, worker: "" });
+                  }}
+                  className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm"
+                >
+                  <option value="">全て</option>
+                  {contractorOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium">作業員</label>
+                <select
+                  value={workerName}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setWorkerName(value);
+                    pushParams({ worker: value });
+                  }}
+                  className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm"
+                >
+                  <option value="">全て</option>
+                  {workerOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
                     </option>
                   ))}
                 </select>

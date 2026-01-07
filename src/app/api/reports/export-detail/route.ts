@@ -128,6 +128,8 @@ export async function GET(request: Request) {
 
   const categoryValue = url.searchParams.get("category") ?? "";
   const workTypeValue = url.searchParams.get("workType") ?? "";
+  const contractorValue = url.searchParams.get("contractor") ?? "";
+  const workerValue = url.searchParams.get("worker") ?? "";
   const memoValue = url.searchParams.get("memo") ?? "";
   const memoMatchValue =
     url.searchParams.get("memoMatch") === "exact" ? "exact" : "partial";
@@ -167,7 +169,27 @@ export async function GET(request: Request) {
         return false;
       }
       const memoText = stripNexusMemo(entry.work_type_text);
-      return memoMatches(memoText, terms, memoMatchValue);
+      if (!memoMatches(memoText, terms, memoMatchValue)) {
+        return false;
+      }
+      const memoHasNexus = entry.work_type_text?.includes("ネクサス");
+      const contractorKey = entry.partners?.[0]
+        ? entry.partners[0].partner_id
+        : memoHasNexus
+          ? "__NEXUS__"
+          : "";
+      if (contractorValue && contractorKey !== contractorValue) {
+        return false;
+      }
+      const workerName =
+        entry.workers?.[0]?.name ??
+        parseNexusName(entry.work_type_text ?? "") ??
+        entry.worker_id ??
+        "";
+      if (workerValue && workerName !== workerValue) {
+        return false;
+      }
+      return true;
     })
     .map((entry) => {
       const rawMemo = entry.work_type_text ?? "";

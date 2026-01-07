@@ -9,6 +9,8 @@ type SearchParams = {
   to?: string;
   category?: string;
   workType?: string;
+  contractor?: string;
+  worker?: string;
   memo?: string;
   memoMatch?: "exact" | "partial";
   view?: "month" | "period" | "detail";
@@ -150,6 +152,8 @@ export default async function ReportsPage({
   const rangeEnd = viewMode === "month" ? end : toValue;
   const categoryValue = resolvedParams.category ?? "";
   const workTypeValue = resolvedParams.workType ?? "";
+  const contractorValue = resolvedParams.contractor ?? "";
+  const workerValue = resolvedParams.worker ?? "";
   const memoValue = resolvedParams.memo ?? "";
   const memoMatchValue =
     resolvedParams.memoMatch === "exact" ? "exact" : "partial";
@@ -246,45 +250,48 @@ export default async function ReportsPage({
     return parts.slice(1).join(" / ");
   };
 
-  const contractorCounts = new Map<string, { name: string; dayKeys: Set<string> }>();
-  typedEntries.forEach((entry) => {
-    const memoHasNexus = entry.work_type_text?.includes("ネクサス");
-    const contractorKey = entry.contractor
-      ? entry.contractor.partner_id
-      : memoHasNexus
-        ? "__NEXUS__"
-        : null;
-    const contractorName = entry.contractor
-      ? stripLegalSuffix(entry.contractor.name)
-      : memoHasNexus
-        ? "ネクサス"
-        : entry.contractor_id ?? null;
+  const buildContractorCounts = (entriesToCount: EntryRow[]) => {
+    const counts = new Map<string, { name: string; dayKeys: Set<string> }>();
+    entriesToCount.forEach((entry) => {
+      const memoHasNexus = entry.work_type_text?.includes("ネクサス");
+      const contractorKey = entry.contractor
+        ? entry.contractor.partner_id
+        : memoHasNexus
+          ? "__NEXUS__"
+          : null;
+      const contractorName = entry.contractor
+        ? stripLegalSuffix(entry.contractor.name)
+        : memoHasNexus
+          ? "ネクサス"
+          : entry.contractor_id ?? null;
 
-    if (!contractorKey || !contractorName) return;
+      if (!contractorKey || !contractorName) return;
 
-    if (!contractorCounts.has(contractorKey)) {
-      contractorCounts.set(contractorKey, {
-        name: contractorName,
-        dayKeys: new Set(),
-      });
-    }
-
-    if (contractorKey === "__NEXUS__") {
-      const nexusName = parseNexusName(entry.work_type_text) ?? "";
-      if (nexusName) {
-        contractorCounts
-          .get(contractorKey)
-          ?.dayKeys.add(`${entry.entry_date}::${nexusName}`);
+      if (!counts.has(contractorKey)) {
+        counts.set(contractorKey, {
+          name: contractorName,
+          dayKeys: new Set(),
+        });
       }
-      return;
-    }
 
-    if (entry.worker_id) {
-      contractorCounts
-        .get(contractorKey)
-        ?.dayKeys.add(`${entry.entry_date}::${entry.worker_id}`);
-    }
-  });
+      if (contractorKey === "__NEXUS__") {
+        const nexusName = parseNexusName(entry.work_type_text) ?? "";
+        if (nexusName) {
+          counts
+            .get(contractorKey)
+            ?.dayKeys.add(`${entry.entry_date}::${nexusName}`);
+        }
+        return;
+      }
+
+      if (entry.worker_id) {
+        counts
+          .get(contractorKey)
+          ?.dayKeys.add(`${entry.entry_date}::${entry.worker_id}`);
+      }
+    });
+    return counts;
+  };
 
   const dailyEntries =
     viewMode === "month"
@@ -418,17 +425,34 @@ export default async function ReportsPage({
   };
 
   const memoTerms = parseMemoTerms(memoValue);
-  const detailedEntries = typedEntries
-    .filter((entry) => {
-      if (categoryValue && entry.work_type?.category_id !== categoryValue) {
-        return false;
-      }
-      if (workTypeValue && entry.work_type?.id !== workTypeValue) {
-        return false;
-      }
-      const memoText = stripNexusMemo(entry.work_type_text);
-      return memoMatches(memoText, memoTerms);
-    })
+  const filteredDetailEntries = typedEntries.filter((entry) => {
+    if (categoryValue && entry.work_type?.category_id !== categoryValue) {
+      return false;
+    }
+    if (workTypeValue && entry.work_type?.id !== workTypeValue) {
+      return false;
+    }
+    const memoText = stripNexusMemo(entry.work_type_text);
+    if (!memoMatches(memoText, memoTerms)) {
+      return false;
+    }
+    const memoHasNexus = entry.work_type_text?.includes("ネクサス");
+    const contractorKey = entry.contractor
+      ? entry.contractor.partner_id
+      : memoHasNexus
+        ? "__NEXUS__"
+        : "";
+    const workerName = entry.worker?.name ?? parseNexusName(entry.work_type_text) ?? "";
+    if (contractorValue && contractorKey !== contractorValue) {
+      return false;
+    }
+    if (workerValue && workerName !== workerValue) {
+      return false;
+    }
+    return true;
+  });
+
+  const detailedEntries = filteredDetailEntries
     .map((entry) => {
       const rawMemo = entry.work_type_text ?? "";
       const memoText = stripNexusMemo(rawMemo);
@@ -455,6 +479,56 @@ export default async function ReportsPage({
       if (contractorCompare !== 0) return contractorCompare;
       return a.workerName.localeCompare(b.workerName, "ja");
     });
+
+  const contractorCounts =
+    viewMode === "detail" ? buildContractorCounts(filteredDetailEntries) : buildContractorCounts(typedEntries);
+
+  const contractorOptions = (() => {
+    const map = new Map<string, string>();
+    typedEntries.forEach((entry) => {
+      const memoHasNexus = entry.work_type_text?.includes("ネクサス");
+      const key = entry.contractor
+        ? entry.contractor.partner_id
+        : memoHasNexus
+          ? "__NEXUS__"
+          : "";
+      const name = entry.contractor
+        ? stripLegalSuffix(entry.contractor.name)
+        : memoHasNexus
+          ? "ネクサス"
+          : "";
+      if (key && name) {
+        map.set(key, name);
+      }
+    });
+    if (!map.has("__NEXUS__")) {
+      map.set("__NEXUS__", "ネクサス");
+    }
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+  })();
+
+  const workerOptions = (() => {
+    if (viewMode !== "detail") {
+      return [];
+    }
+    const set = new Set<string>();
+    typedEntries.forEach((entry) => {
+      const memoHasNexus = entry.work_type_text?.includes("ネクサス");
+      const contractorKey = entry.contractor
+        ? entry.contractor.partner_id
+        : memoHasNexus
+          ? "__NEXUS__"
+          : "";
+      if (contractorValue && contractorKey !== contractorValue) {
+        return;
+      }
+      const workerName = entry.worker?.name ?? parseNexusName(entry.work_type_text) ?? "";
+      if (workerName) {
+        set.add(workerName);
+      }
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "ja"));
+  })();
 
   return (
     <div className="space-y-6">
@@ -499,16 +573,22 @@ export default async function ReportsPage({
         toValue={toValue}
         categoryValue={categoryValue}
         workTypeValue={workTypeValue}
+        contractorValue={contractorValue}
+        workerValue={workerValue}
         memoValue={memoValue}
         memoMatchValue={memoMatchValue}
         view={viewMode}
         guestProjectId={guestProjectId}
         workCategories={workCategories ?? []}
         workTypes={workTypes ?? []}
+        contractorOptions={contractorOptions}
+        workerOptions={workerOptions}
       />
 
       <section className="rounded-lg border bg-white p-4">
-        <h2 className="text-lg font-semibold">業者別人数</h2>
+          <h2 className="text-lg font-semibold">
+            {viewMode === "detail" ? "検索結果の業者別人数" : "業者別人数"}
+          </h2>
         <div className="mt-2 text-sm text-zinc-600">
           合計人数:{" "}
           <span className="font-semibold">
