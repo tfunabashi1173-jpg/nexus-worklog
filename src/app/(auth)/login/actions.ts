@@ -5,6 +5,9 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSessionCookie } from "@/lib/session";
 
+const getTodayString = () =>
+  new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" });
+
 export type LoginState = {
   error: string | null;
 };
@@ -28,12 +31,19 @@ export async function login(
     const supabase = createSupabaseServerClient();
     const { data: guestLink, error: guestError } = await supabase
       .from("guest_links")
-      .select("project_id, is_deleted")
+      .select("project_id, is_deleted, expires_at")
       .eq("token", guestToken)
       .maybeSingle();
 
     if (guestError || !guestLink || guestLink.is_deleted) {
       return { error: "ゲスト用URLが無効です。" };
+    }
+    if (guestLink.expires_at) {
+      const today = getTodayString();
+      if (guestLink.expires_at < today) {
+        await supabase.from("guest_links").delete().eq("token", guestToken);
+        return { error: "ゲスト用URLの有効期限が切れています。" };
+      }
     }
 
     await createSessionCookie({

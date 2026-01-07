@@ -3,28 +3,41 @@ import { randomBytes } from "crypto";
 import { getSessionCookie } from "@/lib/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+const getTodayString = () =>
+  new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" });
+
 export async function POST(request: Request) {
   const session = await getSessionCookie();
   if (!session || session.role === "guest") {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const { projectId } = (await request.json()) as { projectId?: string };
+  const { projectId, expiresAt } = (await request.json()) as {
+    projectId?: string;
+    expiresAt?: string | null;
+  };
   if (!projectId) {
     return NextResponse.json({ error: "invalid" }, { status: 400 });
   }
+  const normalizedExpiresAt =
+    expiresAt && expiresAt.trim() ? expiresAt.trim() : null;
+  if (normalizedExpiresAt && Number.isNaN(Date.parse(normalizedExpiresAt))) {
+    return NextResponse.json({ error: "invalid_expires" }, { status: 400 });
+  }
 
   const supabase = createSupabaseServerClient();
+  const today = getTodayString();
   const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   await supabase
     .from("guest_links")
     .delete()
     .eq("is_deleted", true)
     .lte("deleted_at", cutoff);
+  await supabase.from("guest_links").delete().lt("expires_at", today);
 
   const { data: existingLink } = await supabase
     .from("guest_links")
-    .select("token")
+    .select("token, expires_at")
     .eq("project_id", projectId)
     .eq("is_deleted", false)
     .order("created_at", { ascending: false })
@@ -37,14 +50,18 @@ export async function POST(request: Request) {
     process.env.NEXT_PUBLIC_APP_URL ?? (host ? `${protocol}://${host}` : "");
 
   if (existingLink?.token) {
-    const existingUrl = baseUrl
-      ? `${baseUrl}/login?guest=${existingLink.token}`
-      : `/login?guest=${existingLink.token}`;
-    return NextResponse.json({
-      url: existingUrl,
-      token: existingLink.token,
-      existing: true,
-    });
+    if (existingLink.expires_at && existingLink.expires_at < today) {
+      await supabase.from("guest_links").delete().eq("token", existingLink.token);
+    } else {
+      const existingUrl = baseUrl
+        ? `${baseUrl}/login?guest=${existingLink.token}`
+        : `/login?guest=${existingLink.token}`;
+      return NextResponse.json({
+        url: existingUrl,
+        token: existingLink.token,
+        existing: true,
+      });
+    }
   }
 
   const { data: deletedLink } = await supabase
@@ -83,7 +100,11 @@ export async function POST(request: Request) {
   const token = randomBytes(16).toString("base64url");
   const { error } = await supabase
     .from("guest_links")
-    .insert({ token, project_id: projectId });
+    .insert({
+      token,
+      project_id: projectId,
+      expires_at: normalizedExpiresAt,
+    });
 
   if (error) {
     console.error("Guest link insert error", error);

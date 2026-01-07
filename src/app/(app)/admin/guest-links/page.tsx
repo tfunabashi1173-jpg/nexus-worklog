@@ -16,6 +16,8 @@ export default async function GuestLinksPage() {
   }
 
   const supabase = createSupabaseServerClient();
+  const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" });
+  await supabase.from("guest_links").delete().lt("expires_at", today);
   const { data: sites } = await supabase
     .from("projects")
     .select("project_id, site_name, start_date, end_date")
@@ -24,7 +26,7 @@ export default async function GuestLinksPage() {
 
   const { data: guestLinks } = await supabase
     .from("guest_links")
-    .select("token, project_id, created_at, projects(site_name)")
+    .select("token, project_id, created_at, expires_at, projects(site_name)")
     .eq("is_deleted", false)
     .order("created_at", { ascending: false });
 
@@ -46,6 +48,7 @@ export default async function GuestLinksPage() {
             token: link.token,
             projectId: link.project_id,
             siteName: link.projects?.[0]?.site_name ?? link.project_id,
+            expiresAt: link.expires_at,
           })) ?? []
         }
       />

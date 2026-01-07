@@ -14,6 +14,7 @@ type GuestLinkItem = {
   token: string;
   projectId: string;
   siteName: string;
+  expiresAt?: string | null;
 };
 
 export default function GuestLinkForm({
@@ -31,6 +32,7 @@ export default function GuestLinkForm({
   ).padStart(2, "0")}`;
   const [monthValue, setMonthValue] = useState(defaultMonth);
   const [projectId, setProjectId] = useState("");
+  const [expiresAt, setExpiresAt] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [link, setLink] = useState<string | null>(null);
   const [linkItems, setLinkItems] = useState<GuestLinkItem[]>(links);
@@ -74,7 +76,10 @@ export default function GuestLinkForm({
     const response = await fetch("/api/guest-links", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ projectId }),
+      body: JSON.stringify({
+        projectId,
+        expiresAt: expiresAt.trim() ? expiresAt.trim() : null,
+      }),
     });
     setSaving(false);
     const data = (await response.json()) as {
@@ -108,6 +113,7 @@ export default function GuestLinkForm({
             token,
             projectId,
             siteName: site?.site_name ?? projectId,
+            expiresAt: expiresAt.trim() ? expiresAt.trim() : null,
           },
           ...prev,
         ];
@@ -134,6 +140,35 @@ export default function GuestLinkForm({
       setLink(null);
     }
     setMessage("ゲストURLを削除しました。");
+  };
+
+  const handleUpdateExpiry = async (token: string) => {
+    const target = linkItems.find((item) => item.token === token);
+    if (!target) {
+      return;
+    }
+    const response = await fetch(`/api/guest-links/${token}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        expiresAt: target.expiresAt && target.expiresAt.trim()
+          ? target.expiresAt.trim()
+          : null,
+      }),
+    });
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => null)) as
+        | { error?: string }
+        | null;
+      if (payload?.error === "expired") {
+        setMessage("有効期限が切れているため更新できません。");
+        setLinkItems((prev) => prev.filter((item) => item.token !== token));
+        return;
+      }
+      setMessage("有効期限の更新に失敗しました。");
+      return;
+    }
+    setMessage("有効期限を更新しました。");
   };
 
   const handleCopy = async (token: string) => {
@@ -168,7 +203,7 @@ export default function GuestLinkForm({
     <div className="space-y-4">
       <form onSubmit={handleSubmit} className="rounded-lg border bg-white p-4">
         <h2 className="text-lg font-semibold">ゲストURL発行</h2>
-        <div className="mt-3 grid gap-3 md:grid-cols-[220px_1fr_auto] md:items-end">
+        <div className="mt-3 grid gap-3 md:grid-cols-[220px_1fr_220px_auto] md:items-end">
           <div>
             <label className="text-sm font-medium">対象月</label>
             <input
@@ -200,6 +235,16 @@ export default function GuestLinkForm({
                 </option>
               ))}
             </select>
+          </div>
+          <div>
+            <label className="text-sm font-medium">有効期限</label>
+            <input
+              type="date"
+              value={expiresAt}
+              onChange={(event) => setExpiresAt(event.target.value)}
+              className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm"
+            />
+            <p className="mt-1 text-xs text-zinc-500">未設定なら無期限。</p>
           </div>
           <button
             type="submit"
@@ -249,6 +294,27 @@ export default function GuestLinkForm({
                   value={buildUrl(item.token)}
                   className="min-w-[280px] flex-1 rounded border border-zinc-300 px-2 py-1 text-xs"
                 />
+                <input
+                  type="date"
+                  value={item.expiresAt ?? ""}
+                  onChange={(event) =>
+                    setLinkItems((prev) =>
+                      prev.map((link) =>
+                        link.token === item.token
+                          ? { ...link, expiresAt: event.target.value }
+                          : link
+                      )
+                    )
+                  }
+                  className="rounded border border-zinc-300 px-2 py-1 text-xs"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleUpdateExpiry(item.token)}
+                  className="rounded border border-zinc-300 px-3 py-1 text-xs transition-all duration-150 ease-out hover:bg-zinc-100 active:scale-95"
+                >
+                  期限更新
+                </button>
                 <button
                   type="button"
                   onClick={() => handleCopy(item.token)}

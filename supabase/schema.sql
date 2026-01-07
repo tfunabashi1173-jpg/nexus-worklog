@@ -70,6 +70,7 @@ create unique index if not exists attendance_entries_nexus_unique
 create table if not exists guest_links (
   token text primary key,
   project_id varchar not null references projects(project_id) on delete cascade,
+  expires_at date,
   is_deleted bool not null default false,
   deleted_at timestamptz,
   created_at timestamptz not null default now()
