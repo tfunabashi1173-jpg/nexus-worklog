@@ -31,7 +31,16 @@ export default async function GuestLinksPage() {
     .order("created_at", { ascending: false });
 
   const normalizedGuestLinks =
-    (guestLinks ?? []).map((link) => ({
+    (
+      guestLinks as
+        | Array<{
+            token: string;
+            project_id: string;
+            expires_at: string | null;
+            projects: { site_name: string } | { site_name: string }[] | null;
+          }>
+        | null
+    )?.map((link) => ({
       token: link.token,
       projectId: link.project_id,
       siteName: Array.isArray(link.projects)
