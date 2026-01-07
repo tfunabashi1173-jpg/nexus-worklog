@@ -22,12 +22,14 @@ type EntryRow = {
   worker_id: string | null;
   contractor: { partner_id: string; name: string } | null;
   worker: { id: string; name: string } | null;
-  work_type: {
-    id: string;
-    name: string;
-    category_id: string | null;
-    work_categories: { name: string } | null;
-  } | null;
+  work_type:
+    | Array<{
+        id: string;
+        name: string;
+        category_id: string | null;
+        work_categories: Array<{ name: string }>;
+      }>
+    | null;
   work_type_text: string | null;
 };
 
@@ -426,10 +428,11 @@ export default async function ReportsPage({
 
   const memoTerms = parseMemoTerms(memoValue);
   const filteredDetailEntries = typedEntries.filter((entry) => {
-    if (categoryValue && entry.work_type?.category_id !== categoryValue) {
+    const workType = entry.work_type?.[0] ?? null;
+    if (categoryValue && workType?.category_id !== categoryValue) {
       return false;
     }
-    if (workTypeValue && entry.work_type?.id !== workTypeValue) {
+    if (workTypeValue && workType?.id !== workTypeValue) {
       return false;
     }
     const memoText = stripNexusMemo(entry.work_type_text);
@@ -457,18 +460,19 @@ export default async function ReportsPage({
       const rawMemo = entry.work_type_text ?? "";
       const memoText = stripNexusMemo(rawMemo);
       const nexusName = parseNexusName(rawMemo);
+      const workType = entry.work_type?.[0] ?? null;
       const contractorName = entry.contractor
         ? stripLegalSuffix(entry.contractor.name)
         : nexusName
           ? "ネクサス"
-          : entry.contractor_id ?? "";
-      const workerName = entry.worker?.name ?? nexusName ?? entry.worker_id ?? "";
+          : "";
+      const workerName = entry.worker?.name ?? nexusName ?? "";
       return {
         entryDate: entry.entry_date,
         contractorName,
         workerName,
-        categoryName: entry.work_type?.work_categories?.name ?? "",
-        workTypeName: entry.work_type?.name ?? "",
+        categoryName: workType?.work_categories?.[0]?.name ?? "",
+        workTypeName: workType?.name ?? "",
         memo: memoText,
       };
     })
