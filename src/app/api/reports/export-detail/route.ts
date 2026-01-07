@@ -151,8 +151,8 @@ export async function GET(request: Request) {
     .map((entry) => {
       const memoText = entry.work_type_text ?? "";
       const nexusName = parseNexusName(memoText);
-      const contractorName = entry.partners
-        ? stripLegalSuffix(entry.partners.name)
+      const contractorName = entry.partners?.[0]
+        ? stripLegalSuffix(entry.partners[0].name)
         : nexusName
           ? "ネクサス"
           : entry.contractor_id ?? "";
