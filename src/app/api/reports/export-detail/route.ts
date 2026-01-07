@@ -48,6 +48,26 @@ const parseNexusName = (value: string | null) => {
   return name || null;
 };
 
+const stripNexusMemo = (value: string | null) => {
+  if (!value) return "";
+  const normalized = value.replace(/／/g, "/").replace(/\u3000/g, " ").trim();
+  if (!normalized.startsWith("ネクサス")) {
+    return value;
+  }
+  let rest = normalized.replace(/^ネクサス\s*/u, "");
+  if (rest.startsWith("/")) {
+    rest = rest.slice(1).trim();
+  }
+  if (!rest) {
+    return "";
+  }
+  const parts = rest.split("/").map((part) => part.trim()).filter(Boolean);
+  if (parts.length <= 1) {
+    return "";
+  }
+  return parts.slice(1).join(" / ");
+};
+
 const parseMemoTerms = (value: string) => {
   const tokens = value.split(/[\s\u3000]+/).filter(Boolean);
   const include: string[] = [];
@@ -146,11 +166,13 @@ export async function GET(request: Request) {
       if (workTypeValue && workType?.id !== workTypeValue) {
         return false;
       }
-      return memoMatches(entry.work_type_text ?? "", terms, memoMatchValue);
+      const memoText = stripNexusMemo(entry.work_type_text);
+      return memoMatches(memoText, terms, memoMatchValue);
     })
     .map((entry) => {
-      const memoText = entry.work_type_text ?? "";
-      const nexusName = parseNexusName(memoText);
+      const rawMemo = entry.work_type_text ?? "";
+      const memoText = stripNexusMemo(rawMemo);
+      const nexusName = parseNexusName(rawMemo);
       const contractorName = entry.partners?.[0]
         ? stripLegalSuffix(entry.partners[0].name)
         : nexusName

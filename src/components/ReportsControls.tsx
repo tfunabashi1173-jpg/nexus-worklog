@@ -283,104 +283,110 @@ export default function ReportsControls({
             </div>
           </>
         ) : (
-          <>
-            <div>
-              <label className="text-sm font-medium">開始日</label>
-              <input
-                name="from"
-                type="date"
-                value={from}
-                onChange={(event) => handleFromChange(event.target.value)}
-                className="mt-1 rounded border border-zinc-300 px-3 py-2 text-sm"
-              />
+          <div className="w-full space-y-3">
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <label className="text-sm font-medium">開始日</label>
+                <input
+                  name="from"
+                  type="date"
+                  value={from}
+                  onChange={(event) => handleFromChange(event.target.value)}
+                  className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">終了日</label>
+                <input
+                  name="to"
+                  type="date"
+                  value={to}
+                  onChange={(event) => handleToChange(event.target.value)}
+                  className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">カテゴリ</label>
+                <select
+                  value={categoryId}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setCategoryId(value);
+                    const nextWorkTypes = workTypes.filter((item) =>
+                      value ? item.category_id === value : true
+                    );
+                    if (
+                      workTypeId &&
+                      !nextWorkTypes.some((item) => item.id === workTypeId)
+                    ) {
+                      setWorkTypeId("");
+                    }
+                    pushParams({ category: value, workType: "" });
+                  }}
+                  className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm"
+                >
+                  <option value="">全て</option>
+                  {workCategories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium">作業内容</label>
+                <select
+                  value={workTypeId}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setWorkTypeId(value);
+                    pushParams({ workType: value });
+                  }}
+                  className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm"
+                >
+                  <option value="">全て</option>
+                  {availableWorkTypes.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="md:col-span-2 lg:col-span-3">
+                <label className="text-sm font-medium">備考キーワード</label>
+                <input
+                  type="text"
+                  value={memo}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setMemo(value);
+                    pushParams({ memo: value });
+                  }}
+                  placeholder="例: 仕上げ -手直し"
+                  className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm"
+                />
+                <p className="mt-1 text-xs text-zinc-500">
+                  半角/全角スペース区切り。除外は「-除外語」。
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium">一致条件</label>
+                <select
+                  value={memoMatch}
+                  onChange={(event) => {
+                    const value =
+                      event.target.value === "exact" ? "exact" : "partial";
+                    setMemoMatch(value);
+                    pushParams({ memoMatch: value });
+                  }}
+                  className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm"
+                >
+                  <option value="partial">部分一致</option>
+                  <option value="exact">完全一致</option>
+                </select>
+              </div>
             </div>
-            <div>
-              <label className="text-sm font-medium">終了日</label>
-              <input
-                name="to"
-                type="date"
-                value={to}
-                onChange={(event) => handleToChange(event.target.value)}
-                className="mt-1 rounded border border-zinc-300 px-3 py-2 text-sm"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">カテゴリ</label>
-              <select
-                value={categoryId}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  setCategoryId(value);
-                  const nextWorkTypes = workTypes.filter((item) =>
-                    value ? item.category_id === value : true
-                  );
-                  if (workTypeId && !nextWorkTypes.some((item) => item.id === workTypeId)) {
-                    setWorkTypeId("");
-                  }
-                  pushParams({ category: value, workType: "" });
-                }}
-                className="mt-1 min-w-[200px] rounded border border-zinc-300 px-3 py-2 text-sm"
-              >
-                <option value="">全て</option>
-                {workCategories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-sm font-medium">作業内容</label>
-              <select
-                value={workTypeId}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  setWorkTypeId(value);
-                  pushParams({ workType: value });
-                }}
-                className="mt-1 min-w-[200px] rounded border border-zinc-300 px-3 py-2 text-sm"
-              >
-                <option value="">全て</option>
-                {availableWorkTypes.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="min-w-[240px]">
-              <label className="text-sm font-medium">備考キーワード</label>
-              <input
-                type="text"
-                value={memo}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  setMemo(value);
-                  pushParams({ memo: value });
-                }}
-                placeholder="例: 仕上げ -手直し"
-                className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm"
-              />
-              <p className="mt-1 text-xs text-zinc-500">
-                半角/全角スペース区切り。除外は「-除外語」。
-              </p>
-            </div>
-            <div>
-              <label className="text-sm font-medium">一致条件</label>
-              <select
-                value={memoMatch}
-                onChange={(event) => {
-                  const value = event.target.value === "exact" ? "exact" : "partial";
-                  setMemoMatch(value);
-                  pushParams({ memoMatch: value });
-                }}
-                className="mt-1 rounded border border-zinc-300 px-3 py-2 text-sm"
-              >
-                <option value="partial">部分一致</option>
-                <option value="exact">完全一致</option>
-              </select>
-            </div>
-          </>
+          </div>
         )}
       </div>
     </div>
