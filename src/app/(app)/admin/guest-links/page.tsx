@@ -30,6 +30,16 @@ export default async function GuestLinksPage() {
     .eq("is_deleted", false)
     .order("created_at", { ascending: false });
 
+  const normalizedGuestLinks =
+    (guestLinks ?? []).map((link) => ({
+      token: link.token,
+      projectId: link.project_id,
+      siteName: Array.isArray(link.projects)
+        ? link.projects[0]?.site_name ?? link.project_id
+        : link.projects?.site_name ?? link.project_id,
+      expiresAt: link.expires_at,
+    })) ?? [];
+
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
 
   return (
@@ -43,16 +53,7 @@ export default async function GuestLinksPage() {
       <GuestLinkForm
         sites={sites ?? []}
         baseUrl={baseUrl}
-        links={
-          guestLinks?.map((link) => ({
-            token: link.token,
-            projectId: link.project_id,
-            siteName: Array.isArray(link.projects)
-              ? link.projects[0]?.site_name ?? link.project_id
-              : link.projects?.site_name ?? link.project_id,
-            expiresAt: link.expires_at,
-          })) ?? []
-        }
+        links={normalizedGuestLinks}
       />
     </div>
   );
