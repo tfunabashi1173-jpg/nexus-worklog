@@ -22,14 +22,12 @@ type EntryRow = {
   worker_id: string | null;
   contractor: { partner_id: string; name: string } | null;
   worker: { id: string; name: string } | null;
-  work_type:
-    | Array<{
-        id: string;
-        name: string;
-        category_id: string | null;
-        work_categories: Array<{ name: string }>;
-      }>
-    | null;
+  work_type: {
+    id: string;
+    name: string;
+    category_id: string | null;
+    work_categories: Array<{ name: string }>;
+  } | null;
   work_type_text: string | null;
 };
 
@@ -206,9 +204,9 @@ export default async function ReportsPage({
     entry_date: entry.entry_date,
     contractor_id: entry.contractor_id ?? null,
     worker_id: entry.worker_id ?? null,
-    contractor: entry.partners,
-    worker: entry.workers,
-    work_type: entry.work_types,
+    contractor: Array.isArray(entry.partners) ? entry.partners[0] ?? null : entry.partners,
+    worker: Array.isArray(entry.workers) ? entry.workers[0] ?? null : entry.workers,
+    work_type: Array.isArray(entry.work_types) ? entry.work_types[0] ?? null : entry.work_types,
     work_type_text: entry.work_type_text,
   })) as EntryRow[];
 
@@ -428,7 +426,7 @@ export default async function ReportsPage({
 
   const memoTerms = parseMemoTerms(memoValue);
   const filteredDetailEntries = typedEntries.filter((entry) => {
-    const workType = entry.work_type?.[0] ?? null;
+    const workType = entry.work_type ?? null;
     if (categoryValue && workType?.category_id !== categoryValue) {
       return false;
     }
@@ -460,7 +458,7 @@ export default async function ReportsPage({
       const rawMemo = entry.work_type_text ?? "";
       const memoText = stripNexusMemo(rawMemo);
       const nexusName = parseNexusName(rawMemo);
-      const workType = entry.work_type?.[0] ?? null;
+      const workType = entry.work_type ?? null;
       const contractorName = entry.contractor
         ? stripLegalSuffix(entry.contractor.name)
         : nexusName

@@ -112,6 +112,11 @@ const memoMatches = (
   return true;
 };
 
+const firstOrNull = <T,>(value: T | T[] | null | undefined) => {
+  if (!value) return null;
+  return Array.isArray(value) ? value[0] ?? null : value;
+};
+
 export async function GET(request: Request) {
   const session = await getSessionCookie();
   if (!session) {
@@ -161,7 +166,7 @@ export async function GET(request: Request) {
   const terms = parseMemoTerms(memoValue);
   const rows = (entries ?? [])
     .filter((entry) => {
-      const workType = entry.work_types?.[0] ?? null;
+      const workType = firstOrNull(entry.work_types);
       if (categoryValue && workType?.category_id !== categoryValue) {
         return false;
       }
@@ -173,8 +178,9 @@ export async function GET(request: Request) {
         return false;
       }
       const memoHasNexus = entry.work_type_text?.includes("ネクサス");
-      const contractorKey = entry.partners?.[0]
-        ? entry.partners[0].partner_id
+      const contractor = firstOrNull(entry.partners);
+      const contractorKey = contractor
+        ? contractor.partner_id
         : memoHasNexus
           ? "__NEXUS__"
           : "";
@@ -182,7 +188,7 @@ export async function GET(request: Request) {
         return false;
       }
       const workerName =
-        entry.workers?.[0]?.name ??
+        firstOrNull(entry.workers)?.name ??
         parseNexusName(entry.work_type_text ?? "") ??
         entry.worker_id ??
         "";
@@ -195,19 +201,21 @@ export async function GET(request: Request) {
       const rawMemo = entry.work_type_text ?? "";
       const memoText = stripNexusMemo(rawMemo);
       const nexusName = parseNexusName(rawMemo);
-      const contractorName = entry.partners?.[0]
-        ? stripLegalSuffix(entry.partners[0].name)
+      const contractor = firstOrNull(entry.partners);
+      const contractorName = contractor
+        ? stripLegalSuffix(contractor.name)
         : nexusName
           ? "ネクサス"
           : "";
       const workerName =
-        entry.workers?.[0]?.name ?? nexusName ?? "";
-      const workType = entry.work_types?.[0] ?? null;
+        firstOrNull(entry.workers)?.name ?? nexusName ?? "";
+      const workType = firstOrNull(entry.work_types);
+      const workCategory = firstOrNull(workType?.work_categories);
       return [
         entry.entry_date,
         contractorName,
         workerName,
-        workType?.work_categories?.[0]?.name ?? "",
+        workCategory?.name ?? "",
         workType?.name ?? "",
         memoText,
       ];
