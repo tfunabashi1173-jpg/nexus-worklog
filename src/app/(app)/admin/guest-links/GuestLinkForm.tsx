@@ -168,7 +168,7 @@ export default function GuestLinkForm({
     <div className="space-y-4">
       <form onSubmit={handleSubmit} className="rounded-lg border bg-white p-4">
         <h2 className="text-lg font-semibold">ゲストURL発行</h2>
-        <div className="mt-3 grid gap-3 md:grid-cols-[1fr_auto]">
+        <div className="mt-3 grid gap-3 md:grid-cols-[220px_1fr_auto] md:items-end">
           <div>
             <label className="text-sm font-medium">対象月</label>
             <input
@@ -204,7 +204,7 @@ export default function GuestLinkForm({
           <button
             type="submit"
             disabled={saving}
-            className="h-fit self-end rounded bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition-all duration-150 ease-out hover:bg-zinc-800 active:scale-95 disabled:opacity-50"
+            className="h-10 rounded bg-zinc-900 px-6 text-sm font-semibold text-white transition-all duration-150 ease-out hover:bg-zinc-800 active:scale-95 disabled:opacity-50"
           >
             {saving ? "発行中..." : "発行"}
           </button>
