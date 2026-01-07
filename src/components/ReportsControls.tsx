@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 type Site = {
   project_id: string;
@@ -78,6 +78,16 @@ export default function ReportsControls({
     memoMatchValue
   );
   const [mode, setMode] = useState<ViewMode>(view);
+  const initialValuesRef = useRef({
+    from: fromValue,
+    to: toValue,
+    category: categoryValue,
+    workType: workTypeValue,
+    contractor: contractorValue,
+    worker: workerValue,
+    memo: memoValue,
+    memoMatch: memoMatchValue,
+  });
 
   useEffect(() => {
     setSite(selectedSiteId);
@@ -220,6 +230,80 @@ export default function ReportsControls({
     categoryId ? item.category_id === categoryId : true
   );
 
+  const handleResetKey = (
+    event: React.KeyboardEvent<HTMLInputElement | HTMLSelectElement>,
+    field: keyof typeof initialValuesRef.current
+  ) => {
+    if (event.key !== "Delete") {
+      return;
+    }
+    event.preventDefault();
+    const initial = initialValuesRef.current;
+    if (field === "from") {
+      setFrom(initial.from);
+      pushParams({ from: initial.from });
+      return;
+    }
+    if (field === "to") {
+      setTo(initial.to);
+      pushParams({ to: initial.to });
+      return;
+    }
+    if (field === "category") {
+      setCategoryId(initial.category);
+      setWorkTypeId(initial.workType);
+      pushParams({ category: initial.category, workType: initial.workType });
+      return;
+    }
+    if (field === "workType") {
+      setWorkTypeId(initial.workType);
+      pushParams({ workType: initial.workType });
+      return;
+    }
+    if (field === "contractor") {
+      setContractorId(initial.contractor);
+      setWorkerName(initial.worker);
+      pushParams({ contractor: initial.contractor, worker: initial.worker });
+      return;
+    }
+    if (field === "worker") {
+      setWorkerName(initial.worker);
+      pushParams({ worker: initial.worker });
+      return;
+    }
+    if (field === "memo") {
+      setMemo(initial.memo);
+      pushParams({ memo: initial.memo });
+      return;
+    }
+    if (field === "memoMatch") {
+      setMemoMatch(initial.memoMatch);
+      pushParams({ memoMatch: initial.memoMatch });
+    }
+  };
+
+  const handleResetAll = () => {
+    const initial = initialValuesRef.current;
+    setFrom(initial.from);
+    setTo(initial.to);
+    setCategoryId(initial.category);
+    setWorkTypeId(initial.workType);
+    setContractorId(initial.contractor);
+    setWorkerName(initial.worker);
+    setMemo(initial.memo);
+    setMemoMatch(initial.memoMatch);
+    pushParams({
+      from: initial.from,
+      to: initial.to,
+      category: initial.category,
+      workType: initial.workType,
+      contractor: initial.contractor,
+      worker: initial.worker,
+      memo: initial.memo,
+      memoMatch: initial.memoMatch,
+    });
+  };
+
   return (
     <div className="space-y-3 rounded-lg border bg-white p-4">
       <div className="flex flex-wrap items-center text-sm">
@@ -323,6 +407,7 @@ export default function ReportsControls({
                   type="date"
                   value={from}
                   onChange={(event) => handleFromChange(event.target.value)}
+                  onKeyDown={(event) => handleResetKey(event, "from")}
                   className="mt-1 h-9 w-[130px] rounded border border-zinc-300 px-2 text-sm"
                 />
               </div>
@@ -333,6 +418,7 @@ export default function ReportsControls({
                   type="date"
                   value={to}
                   onChange={(event) => handleToChange(event.target.value)}
+                  onKeyDown={(event) => handleResetKey(event, "to")}
                   className="mt-1 h-9 w-[130px] rounded border border-zinc-300 px-2 text-sm"
                 />
               </div>
@@ -348,6 +434,7 @@ export default function ReportsControls({
                     }
                     pushParams({ contractor: value, worker: "" });
                   }}
+                  onKeyDown={(event) => handleResetKey(event, "contractor")}
                   className="mt-1 h-9 w-full rounded border border-zinc-300 px-2 text-sm"
                 >
                   <option value="">全て</option>
@@ -367,6 +454,7 @@ export default function ReportsControls({
                     setWorkerName(value);
                     pushParams({ worker: value });
                   }}
+                  onKeyDown={(event) => handleResetKey(event, "worker")}
                   className="mt-1 h-9 w-full rounded border border-zinc-300 px-2 text-sm"
                 >
                   <option value="">全て</option>
@@ -395,6 +483,7 @@ export default function ReportsControls({
                     }
                     pushParams({ category: value, workType: "" });
                   }}
+                  onKeyDown={(event) => handleResetKey(event, "category")}
                   className="mt-1 h-9 w-[150px] rounded border border-zinc-300 px-2 text-sm"
                 >
                   <option value="">全て</option>
@@ -414,6 +503,7 @@ export default function ReportsControls({
                     setWorkTypeId(value);
                     pushParams({ workType: value });
                   }}
+                  onKeyDown={(event) => handleResetKey(event, "workType")}
                   className="mt-1 h-9 w-[200px] rounded border border-zinc-300 px-2 text-sm"
                 >
                   <option value="">全て</option>
@@ -436,6 +526,7 @@ export default function ReportsControls({
                     setMemo(value);
                     pushParams({ memo: value });
                   }}
+                  onKeyDown={(event) => handleResetKey(event, "memo")}
                   placeholder="例: 仕上げ -手直し"
                   className="mt-1 h-9 w-full rounded border border-zinc-300 px-2 text-sm"
                 />
@@ -453,11 +544,21 @@ export default function ReportsControls({
                     setMemoMatch(value);
                     pushParams({ memoMatch: value });
                   }}
+                  onKeyDown={(event) => handleResetKey(event, "memoMatch")}
                   className="mt-1 h-9 w-[160px] rounded border border-zinc-300 px-2 text-sm"
                 >
                   <option value="partial">部分一致</option>
                   <option value="exact">完全一致</option>
                 </select>
+              </div>
+              <div className="self-end">
+                <button
+                  type="button"
+                  onClick={handleResetAll}
+                  className="h-9 rounded border border-zinc-300 px-4 text-sm transition-all duration-150 ease-out hover:bg-zinc-100 active:scale-95"
+                >
+                  条件リセット
+                </button>
               </div>
             </div>
           </div>

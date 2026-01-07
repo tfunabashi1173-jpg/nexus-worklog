@@ -146,7 +146,36 @@ export async function GET(request: Request) {
     }
   }
 
-  const [{ data: site }, { data: entries }] = await Promise.all([
+  const { data: site } = await supabase
+    .from("projects")
+    .select("project_id, site_name")
+    .eq("project_id", selectedSiteId)
+    .maybeSingle();
+
+  const entries: any[] = [];
+  const pageSize = 1000;
+  let fromIndex = 0;
+  while (true) {
+    const { data, error } = await supabase
+      .from("attendance_entries")
+      .select(
+        "entry_date, contractor_id, worker_id, work_type_text, partners(partner_id,name), workers(id,name), work_types(id,name,category_id, work_categories(name))"
+      )
+      .eq("project_id", selectedSiteId)
+      .gte("entry_date", fromValue)
+      .lte("entry_date", toValue)
+      .order("entry_date")
+      .range(fromIndex, fromIndex + pageSize - 1);
+    if (error) {
+      console.error("Failed to load entries", error);
+      return new Response("Failed to load entries", { status: 500 });
+    }
+    entries.push(...(data ?? []));
+    if (!data || data.length < pageSize) {
+      break;
+    }
+    fromIndex += pageSize;
+  }
     supabase
       .from("projects")
       .select("project_id, site_name")
@@ -164,7 +193,7 @@ export async function GET(request: Request) {
   ]);
 
   const terms = parseMemoTerms(memoValue);
-  const rows = (entries ?? [])
+  const rows = entries
     .filter((entry) => {
       const workType = firstOrNull(entry.work_types);
       if (categoryValue && workType?.category_id !== categoryValue) {
