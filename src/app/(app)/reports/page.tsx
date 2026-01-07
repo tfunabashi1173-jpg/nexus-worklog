@@ -7,7 +7,11 @@ type SearchParams = {
   month?: string;
   from?: string;
   to?: string;
-  view?: "month" | "period";
+  category?: string;
+  workType?: string;
+  memo?: string;
+  memoMatch?: "exact" | "partial";
+  view?: "month" | "period" | "detail";
 };
 
 type EntryRow = {
@@ -16,7 +20,12 @@ type EntryRow = {
   worker_id: string | null;
   contractor: { partner_id: string; name: string } | null;
   worker: { id: string; name: string } | null;
-  work_type: { name: string } | null;
+  work_type: {
+    id: string;
+    name: string;
+    category_id: string | null;
+    work_categories: { name: string } | null;
+  } | null;
   work_type_text: string | null;
 };
 
@@ -69,7 +78,12 @@ export default async function ReportsPage({
   const profile = await getUserSettings();
   const today = new Date();
   const todayValue = today.toISOString().slice(0, 10);
-  const viewMode = resolvedParams.view === "period" ? "period" : "month";
+  const viewMode =
+    resolvedParams.view === "period"
+      ? "period"
+      : resolvedParams.view === "detail"
+        ? "detail"
+        : "month";
   const monthValue =
     resolvedParams.month ??
     `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
@@ -132,8 +146,13 @@ export default async function ReportsPage({
   const defaultTo = selectedSite?.end_date ?? todayValue;
   const fromValue = resolvedParams.from ?? defaultFrom;
   const toValue = resolvedParams.to ?? defaultTo;
-  const rangeStart = viewMode === "period" ? fromValue : start;
-  const rangeEnd = viewMode === "period" ? toValue : end;
+  const rangeStart = viewMode === "month" ? start : fromValue;
+  const rangeEnd = viewMode === "month" ? end : toValue;
+  const categoryValue = resolvedParams.category ?? "";
+  const workTypeValue = resolvedParams.workType ?? "";
+  const memoValue = resolvedParams.memo ?? "";
+  const memoMatchValue =
+    resolvedParams.memoMatch === "exact" ? "exact" : "partial";
 
   const fetchEntries = async () => {
     const all: any[] = [];
@@ -143,7 +162,7 @@ export default async function ReportsPage({
       const { data, error } = await supabase
         .from("attendance_entries")
         .select(
-          "entry_date, contractor_id, worker_id, work_type_text, partners(partner_id,name), workers(id,name), work_types(name)"
+          "entry_date, contractor_id, worker_id, work_type_text, partners(partner_id,name), workers(id,name), work_types(id,name,category_id, work_categories(name))"
         )
         .eq("project_id", selectedSiteId)
         .gte("entry_date", rangeStart)
@@ -163,6 +182,19 @@ export default async function ReportsPage({
   };
 
   const entries = await fetchEntries();
+
+  const [{ data: workCategories }, { data: workTypes }] = await Promise.all([
+    supabase
+      .from("work_categories")
+      .select("id, name")
+      .or("id_deleted.is.false,id_deleted.is.null")
+      .order("name"),
+    supabase
+      .from("work_types")
+      .select("id, name, category_id")
+      .or("id_deleted.is.false,id_deleted.is.null")
+      .order("name"),
+  ]);
 
   const typedEntries = (entries ?? []).map((entry) => ({
     entry_date: entry.entry_date,
@@ -325,6 +357,83 @@ export default async function ReportsPage({
 
   const groupedRows = buildGroupedRows(attendanceRows);
 
+  const parseMemoTerms = (value: string) => {
+    const tokens = value.split(/[\s\u3000]+/).filter(Boolean);
+    const include: string[] = [];
+    const exclude: string[] = [];
+    tokens.forEach((token) => {
+      if (token.startsWith("-") && token.length > 1) {
+        exclude.push(token.slice(1));
+      } else {
+        include.push(token);
+      }
+    });
+    return { include, exclude };
+  };
+
+  const memoMatches = (memo: string, terms: ReturnType<typeof parseMemoTerms>) => {
+    if (!terms.include.length && !terms.exclude.length) {
+      return true;
+    }
+    if (!memo) {
+      return terms.include.length === 0;
+    }
+    if (memoMatchValue === "exact") {
+      const memoTokens = memo.split(/[\s\u3000]+/).filter(Boolean);
+      if (terms.include.some((term) => !memoTokens.includes(term))) {
+        return false;
+      }
+      if (terms.exclude.some((term) => memoTokens.includes(term))) {
+        return false;
+      }
+      return true;
+    }
+    if (terms.include.some((term) => !memo.includes(term))) {
+      return false;
+    }
+    if (terms.exclude.some((term) => memo.includes(term))) {
+      return false;
+    }
+    return true;
+  };
+
+  const memoTerms = parseMemoTerms(memoValue);
+  const detailedEntries = typedEntries
+    .filter((entry) => {
+      if (categoryValue && entry.work_type?.category_id !== categoryValue) {
+        return false;
+      }
+      if (workTypeValue && entry.work_type?.id !== workTypeValue) {
+        return false;
+      }
+      return memoMatches(entry.work_type_text ?? "", memoTerms);
+    })
+    .map((entry) => {
+      const memoText = entry.work_type_text ?? "";
+      const nexusName = parseNexusName(memoText);
+      const contractorName = entry.contractor
+        ? stripLegalSuffix(entry.contractor.name)
+        : nexusName
+          ? "ネクサス"
+          : entry.contractor_id ?? "";
+      const workerName = entry.worker?.name ?? nexusName ?? entry.worker_id ?? "";
+      return {
+        entryDate: entry.entry_date,
+        contractorName,
+        workerName,
+        categoryName: entry.work_type?.work_categories?.name ?? "",
+        workTypeName: entry.work_type?.name ?? "",
+        memo: memoText,
+      };
+    })
+    .sort((a, b) => {
+      const dateCompare = a.entryDate.localeCompare(b.entryDate);
+      if (dateCompare !== 0) return dateCompare;
+      const contractorCompare = a.contractorName.localeCompare(b.contractorName, "ja");
+      if (contractorCompare !== 0) return contractorCompare;
+      return a.workerName.localeCompare(b.workerName, "ja");
+    });
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -335,13 +444,25 @@ export default async function ReportsPage({
           </p>
         </div>
         <a
-          href={`/api/reports/export?${new URLSearchParams({
-            site: selectedSiteId,
-            view: viewMode,
-            ...(viewMode === "month"
-              ? { month: monthValue }
-              : { from: fromValue, to: toValue }),
-          }).toString()}`}
+          href={
+            viewMode === "detail"
+              ? `/api/reports/export-detail?${new URLSearchParams({
+                  site: selectedSiteId,
+                  from: fromValue,
+                  to: toValue,
+                  category: categoryValue,
+                  workType: workTypeValue,
+                  memo: memoValue,
+                  memoMatch: memoMatchValue,
+                }).toString()}`
+              : `/api/reports/export?${new URLSearchParams({
+                  site: selectedSiteId,
+                  view: viewMode,
+                  ...(viewMode === "month"
+                    ? { month: monthValue }
+                    : { from: fromValue, to: toValue }),
+                }).toString()}`
+          }
           className="rounded border border-zinc-300 px-3 py-2 text-sm hover:bg-zinc-100"
         >
           Excel出力
@@ -354,8 +475,14 @@ export default async function ReportsPage({
         monthValue={monthValue}
         fromValue={fromValue}
         toValue={toValue}
+        categoryValue={categoryValue}
+        workTypeValue={workTypeValue}
+        memoValue={memoValue}
+        memoMatchValue={memoMatchValue}
         view={viewMode}
         guestProjectId={guestProjectId}
+        workCategories={workCategories ?? []}
+        workTypes={workTypes ?? []}
       />
 
       <section className="rounded-lg border bg-white p-4">
@@ -467,7 +594,7 @@ export default async function ReportsPage({
             </table>
           </div>
         </section>
-      ) : (
+      ) : viewMode === "period" ? (
         <section className="rounded-lg border bg-white p-4">
           <h2 className="text-lg font-semibold">期間集計（ネクサス内訳）</h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -487,6 +614,43 @@ export default async function ReportsPage({
             {!attendanceRows.some((row) => row.contractorName === "ネクサス") && (
               <p className="text-sm text-zinc-500">ネクサスの入場がありません。</p>
             )}
+          </div>
+        </section>
+      ) : (
+        <section className="rounded-lg border bg-white p-4">
+          <h2 className="text-lg font-semibold">詳細検索結果</h2>
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full min-w-[960px] text-left text-sm">
+              <thead className="bg-zinc-50">
+                <tr>
+                  <th className="px-3 py-2">日付</th>
+                  <th className="px-3 py-2">業者</th>
+                  <th className="px-3 py-2">作業員</th>
+                  <th className="px-3 py-2">カテゴリ</th>
+                  <th className="px-3 py-2">作業内容</th>
+                  <th className="px-3 py-2">備考</th>
+                </tr>
+              </thead>
+              <tbody>
+                {detailedEntries.map((entry, index) => (
+                  <tr key={`${entry.entryDate}-${entry.workerName}-${index}`} className="border-t">
+                    <td className="px-3 py-2">{entry.entryDate}</td>
+                    <td className="px-3 py-2">{entry.contractorName}</td>
+                    <td className="px-3 py-2">{entry.workerName}</td>
+                    <td className="px-3 py-2">{entry.categoryName}</td>
+                    <td className="px-3 py-2">{entry.workTypeName}</td>
+                    <td className="px-3 py-2">{entry.memo}</td>
+                  </tr>
+                ))}
+                {!detailedEntries.length && (
+                  <tr>
+                    <td className="px-3 py-3 text-sm text-zinc-500" colSpan={6}>
+                      条件に一致する入場記録がありません。
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </section>
       )}
