@@ -203,56 +203,63 @@ export default function GuestLinkForm({
     <div className="space-y-4">
       <form onSubmit={handleSubmit} className="rounded-lg border bg-white p-4">
         <h2 className="text-lg font-semibold">ゲストURL発行</h2>
-        <div className="mt-3 grid gap-3 md:grid-cols-[220px_1fr_220px_auto] md:items-end">
-          <div>
-            <label className="text-sm font-medium">対象月</label>
-            <input
-              name="month"
-              type="month"
-              value={monthValue}
-              onChange={(event) => {
-                const value = event.target.value;
-                setMonthValue(value);
-                const nextSites = filterSitesByMonth(value);
-                if (projectId && !nextSites.some((site) => site.project_id === projectId)) {
-                  setProjectId("");
-                }
-              }}
-              className="mt-1 h-10 w-full rounded border border-zinc-300 px-3 text-sm"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium">対象現場</label>
-            <select
-              value={projectId}
-              onChange={(event) => setProjectId(event.target.value)}
-              className="mt-1 h-10 w-full rounded border border-zinc-300 px-3 text-sm"
+        <div className="mt-3 space-y-1">
+          <div className="grid gap-3 md:grid-cols-[220px_1fr_220px_auto] md:items-end">
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium">対象月</label>
+              <input
+                name="month"
+                type="month"
+                value={monthValue}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setMonthValue(value);
+                  const nextSites = filterSitesByMonth(value);
+                  if (projectId && !nextSites.some((site) => site.project_id === projectId)) {
+                    setProjectId("");
+                  }
+                }}
+                className="h-10 w-full rounded border border-zinc-300 px-3 text-sm"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium">対象現場</label>
+              <select
+                value={projectId}
+                onChange={(event) => setProjectId(event.target.value)}
+                className="h-10 w-full rounded border border-zinc-300 px-3 text-sm"
+              >
+                <option value="">現場を選択してください</option>
+                {filteredSites.map((site) => (
+                  <option key={site.project_id} value={site.project_id}>
+                    {site.site_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium">有効期限</label>
+              <input
+                type="date"
+                value={expiresAt}
+                onChange={(event) => setExpiresAt(event.target.value)}
+                className="h-10 w-full rounded border border-zinc-300 px-3 text-sm"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={saving}
+              className="h-10 rounded bg-zinc-900 px-6 text-sm font-semibold text-white transition-all duration-150 ease-out hover:bg-zinc-800 active:scale-95 disabled:opacity-50"
             >
-              <option value="">現場を選択してください</option>
-              {filteredSites.map((site) => (
-                <option key={site.project_id} value={site.project_id}>
-                  {site.site_name}
-                </option>
-              ))}
-            </select>
+              {saving ? "発行中..." : "発行"}
+            </button>
           </div>
-          <div>
-            <label className="text-sm font-medium">有効期限</label>
-            <input
-              type="date"
-              value={expiresAt}
-              onChange={(event) => setExpiresAt(event.target.value)}
-              className="mt-1 h-10 w-full rounded border border-zinc-300 px-3 text-sm"
-            />
-            <p className="mt-1 h-4 text-xs text-zinc-500">未設定なら無期限。</p>
+          <div className="grid gap-3 md:grid-cols-[220px_1fr_220px_auto]">
+            <div className="hidden md:block" />
+            <div className="hidden md:block" />
+            <p className="text-xs text-zinc-500">未設定なら無期限。</p>
+            <div className="hidden md:block" />
           </div>
-          <button
-            type="submit"
-            disabled={saving}
-            className="h-10 rounded bg-zinc-900 px-6 text-sm font-semibold text-white transition-all duration-150 ease-out hover:bg-zinc-800 active:scale-95 disabled:opacity-50"
-          >
-            {saving ? "発行中..." : "発行"}
-          </button>
         </div>
         {link && (
           <div className="mt-4">

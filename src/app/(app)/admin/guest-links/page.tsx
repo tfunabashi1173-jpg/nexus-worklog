@@ -47,7 +47,9 @@ export default async function GuestLinksPage() {
           guestLinks?.map((link) => ({
             token: link.token,
             projectId: link.project_id,
-            siteName: link.projects?.[0]?.site_name ?? link.project_id,
+            siteName: Array.isArray(link.projects)
+              ? link.projects[0]?.site_name ?? link.project_id
+              : link.projects?.site_name ?? link.project_id,
             expiresAt: link.expires_at,
           })) ?? []
         }
