@@ -7,6 +7,7 @@ type EntryPayload = {
   project_id: string;
   contractor_id: string | null;
   worker_id: string | null;
+  nexus_user_id: string | null;
   work_type_id: string | null;
   work_type_text: string | null;
 };
@@ -27,11 +28,6 @@ export async function POST(request: Request) {
   if (!entries || entries.length === 0) {
     return NextResponse.json({ error: "invalid" }, { status: 400 });
   }
-  const parseNexusName = (value: string | null) => {
-    if (!value?.startsWith("ネクサス /")) return null;
-    const parts = value.split(" / ").map((part) => part.trim());
-    return parts[1] ?? null;
-  };
   const uuidRegex =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   const invalidWorkerIds = entries
@@ -47,8 +43,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const isNexusMemo = (value: string | null) =>
-    Boolean(value && value.startsWith("ネクサス /"));
   const uniqueMap = new Map<string, EntryPayload>();
   for (const entry of entries) {
     if (entry.worker_id) {
@@ -58,10 +52,9 @@ export async function POST(request: Request) {
       );
       continue;
     }
-    const nexusName = parseNexusName(entry.work_type_text);
-    if (nexusName) {
+    if (entry.nexus_user_id) {
       uniqueMap.set(
-        `nexus:${entry.entry_date}:${entry.project_id}:${nexusName}`,
+        `nexus:${entry.entry_date}:${entry.project_id}:${entry.nexus_user_id}`,
         entry
       );
     }
@@ -69,44 +62,7 @@ export async function POST(request: Request) {
   const uniqueEntries = Array.from(uniqueMap.values());
 
   const supabase = createSupabaseServerClient();
-  const nexusEntries = uniqueEntries.filter((entry) =>
-    isNexusMemo(entry.work_type_text)
-  );
-  const nexusGroups = new Map<string, EntryPayload[]>();
-  nexusEntries.forEach((entry) => {
-    const key = `${entry.project_id}::${entry.entry_date}`;
-    const list = nexusGroups.get(key) ?? [];
-    list.push(entry);
-    nexusGroups.set(key, list);
-  });
-
-  const filteredEntries: EntryPayload[] = [];
-  const nonNexusEntries = uniqueEntries.filter(
-    (entry) => !isNexusMemo(entry.work_type_text)
-  );
-  filteredEntries.push(...nonNexusEntries);
-
-  for (const [key, group] of nexusGroups.entries()) {
-    const [projectId, entryDate] = key.split("::");
-    const { data: existing } = await supabase
-      .from("attendance_entries")
-      .select("work_type_text")
-      .eq("project_id", projectId)
-      .eq("entry_date", entryDate)
-      .is("worker_id", null)
-      .ilike("work_type_text", "ネクサス / %");
-    const existingTexts = new Set(
-      (existing ?? [])
-        .map((row) => parseNexusName(row.work_type_text))
-        .filter((value): value is string => Boolean(value))
-    );
-    filteredEntries.push(
-      ...group.filter((entry) => {
-        const name = parseNexusName(entry.work_type_text);
-        return name ? !existingTexts.has(name) : false;
-      })
-    );
-  }
+  const filteredEntries = uniqueEntries;
 
   if (deletedIds && deletedIds.length) {
     const { error: deleteError } = await supabase
@@ -127,18 +83,35 @@ export async function POST(request: Request) {
     created_by: session.userId,
   }));
 
-  const { error } = await supabase
-    .from("attendance_entries")
-    .upsert(payload, {
-      onConflict: "entry_date,project_id,worker_id",
-    });
-
-  if (error) {
-    console.error("Attendance upsert error", error);
-    return NextResponse.json(
-      { error: "failed", details: error.message },
-      { status: 500 }
-    );
+  const nexusPayload = payload.filter((entry) => entry.nexus_user_id);
+  const workerPayload = payload.filter((entry) => !entry.nexus_user_id);
+  if (workerPayload.length) {
+    const { error } = await supabase
+      .from("attendance_entries")
+      .upsert(workerPayload, {
+        onConflict: "entry_date,project_id,worker_id",
+      });
+    if (error) {
+      console.error("Attendance upsert error", error);
+      return NextResponse.json(
+        { error: "failed", details: error.message },
+        { status: 500 }
+      );
+    }
+  }
+  if (nexusPayload.length) {
+    const { error } = await supabase
+      .from("attendance_entries")
+      .upsert(nexusPayload, {
+        onConflict: "entry_date,project_id,nexus_user_id",
+      });
+    if (error) {
+      console.error("Attendance upsert error", error);
+      return NextResponse.json(
+        { error: "failed", details: error.message },
+        { status: 500 }
+      );
+    }
   }
 
   return NextResponse.json({ ok: true });
@@ -161,7 +134,7 @@ export async function GET(request: Request) {
   const { data, error } = await supabase
     .from("attendance_entries")
     .select(
-      "id, entry_date, project_id, contractor_id, worker_id, work_type_id, work_type_text, workers(id,name), partners(partner_id,name)"
+      "id, entry_date, project_id, contractor_id, worker_id, nexus_user_id, work_type_id, work_type_text, workers(id,name), partners(partner_id,name), users(user_id,username)"
     )
     .eq("entry_date", entryDate)
     .eq("project_id", projectId)

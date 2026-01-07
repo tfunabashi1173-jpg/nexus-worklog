@@ -20,8 +20,10 @@ type EntryRow = {
   entry_date: string;
   contractor_id: string | null;
   worker_id: string | null;
+  nexus_user_id: string | null;
   contractor: { partner_id: string; name: string } | null;
   worker: { id: string; name: string } | null;
+  nexus_user: { user_id: string; username: string | null } | null;
   work_type: {
     id: string;
     name: string;
@@ -166,7 +168,7 @@ export default async function ReportsPage({
       const { data, error } = await supabase
         .from("attendance_entries")
         .select(
-          "entry_date, contractor_id, worker_id, work_type_text, partners(partner_id,name), workers(id,name), work_types(id,name,category_id, work_categories(name))"
+          "entry_date, contractor_id, worker_id, nexus_user_id, work_type_text, partners(partner_id,name), workers(id,name), users(user_id,username), work_types(id,name,category_id, work_categories(name))"
         )
         .eq("project_id", selectedSiteId)
         .gte("entry_date", rangeStart)
@@ -204,8 +206,10 @@ export default async function ReportsPage({
     entry_date: entry.entry_date,
     contractor_id: entry.contractor_id ?? null,
     worker_id: entry.worker_id ?? null,
+    nexus_user_id: entry.nexus_user_id ?? null,
     contractor: Array.isArray(entry.partners) ? entry.partners[0] ?? null : entry.partners,
     worker: Array.isArray(entry.workers) ? entry.workers[0] ?? null : entry.workers,
+    nexus_user: Array.isArray(entry.users) ? entry.users[0] ?? null : entry.users,
     work_type: Array.isArray(entry.work_types) ? entry.work_types[0] ?? null : entry.work_types,
     work_type_text: entry.work_type_text,
   })) as EntryRow[];
@@ -229,6 +233,15 @@ export default async function ReportsPage({
     const name = rest.split("/")[0]?.trim() ?? "";
     return name || null;
   };
+
+  const getNexusName = (entry: EntryRow) =>
+    entry.nexus_user?.username ??
+    entry.nexus_user_id ??
+    parseNexusName(entry.work_type_text) ??
+    null;
+
+  const isNexusEntry = (entry: EntryRow) =>
+    Boolean(entry.nexus_user_id || parseNexusName(entry.work_type_text));
 
   const stripNexusMemo = (value: string | null) => {
     if (!value) return "";
@@ -264,15 +277,14 @@ export default async function ReportsPage({
   const buildContractorCounts = (entriesToCount: EntryRow[]) => {
     const counts = new Map<string, { name: string; dayKeys: Set<string> }>();
     entriesToCount.forEach((entry) => {
-      const memoHasNexus = entry.work_type_text?.includes("ネクサス");
       const contractorKey = entry.contractor
         ? entry.contractor.partner_id
-        : memoHasNexus
+        : isNexusEntry(entry)
           ? "__NEXUS__"
           : null;
       const contractorName = entry.contractor
         ? stripLegalSuffix(entry.contractor.name)
-        : memoHasNexus
+        : isNexusEntry(entry)
           ? "ネクサス"
           : entry.contractor_id ?? null;
 
@@ -286,11 +298,11 @@ export default async function ReportsPage({
       }
 
       if (contractorKey === "__NEXUS__") {
-        const nexusName = parseNexusName(entry.work_type_text) ?? "";
-        if (nexusName) {
+        const nexusKey = entry.nexus_user_id ?? getNexusName(entry) ?? "";
+        if (nexusKey) {
           counts
             .get(contractorKey)
-            ?.dayKeys.add(`${entry.entry_date}::${nexusName}`);
+            ?.dayKeys.add(`${entry.entry_date}::${nexusKey}`);
         }
         return;
       }
@@ -323,13 +335,12 @@ export default async function ReportsPage({
     { contractorName: string; workerName: string; dates: Set<string> }
   >();
   typedEntries.forEach((entry) => {
-    const nexusName = parseNexusName(entry.work_type_text);
     const contractorName = entry.contractor
       ? stripLegalSuffix(entry.contractor.name)
-      : nexusName
+      : isNexusEntry(entry)
         ? "ネクサス"
         : entry.contractor_id ?? null;
-    const workerName = entry.worker?.name ?? nexusName ?? entry.worker_id;
+    const workerName = entry.worker?.name ?? getNexusName(entry) ?? entry.worker_id;
     if (!contractorName || !workerName) {
       return;
     }
@@ -448,13 +459,12 @@ export default async function ReportsPage({
     if (!memoMatches(memoText, memoTerms)) {
       return false;
     }
-    const memoHasNexus = entry.work_type_text?.includes("ネクサス");
     const contractorKey = entry.contractor
       ? entry.contractor.partner_id
-      : memoHasNexus
+      : isNexusEntry(entry)
         ? "__NEXUS__"
         : "";
-    const workerName = entry.worker?.name ?? parseNexusName(entry.work_type_text) ?? "";
+    const workerName = entry.worker?.name ?? getNexusName(entry) ?? "";
     if (contractorValue && contractorKey !== contractorValue) {
       return false;
     }
@@ -468,14 +478,13 @@ export default async function ReportsPage({
     .map((entry) => {
       const rawMemo = entry.work_type_text ?? "";
       const memoText = stripNexusMemo(rawMemo);
-      const nexusName = parseNexusName(rawMemo);
       const workType = entry.work_type ?? null;
       const contractorName = entry.contractor
         ? stripLegalSuffix(entry.contractor.name)
-        : nexusName
+        : isNexusEntry(entry)
           ? "ネクサス"
           : "";
-      const workerName = entry.worker?.name ?? nexusName ?? "";
+      const workerName = entry.worker?.name ?? getNexusName(entry) ?? "";
       return {
         entryDate: entry.entry_date,
         contractorName,
@@ -499,15 +508,14 @@ export default async function ReportsPage({
   const contractorOptions = (() => {
     const map = new Map<string, string>();
     typedEntries.forEach((entry) => {
-      const memoHasNexus = entry.work_type_text?.includes("ネクサス");
       const key = entry.contractor
         ? entry.contractor.partner_id
-        : memoHasNexus
+        : isNexusEntry(entry)
           ? "__NEXUS__"
           : "";
       const name = entry.contractor
         ? stripLegalSuffix(entry.contractor.name)
-        : memoHasNexus
+        : isNexusEntry(entry)
           ? "ネクサス"
           : "";
       if (key && name) {
@@ -526,16 +534,15 @@ export default async function ReportsPage({
     }
     const set = new Set<string>();
     typedEntries.forEach((entry) => {
-      const memoHasNexus = entry.work_type_text?.includes("ネクサス");
       const contractorKey = entry.contractor
         ? entry.contractor.partner_id
-        : memoHasNexus
+        : isNexusEntry(entry)
           ? "__NEXUS__"
           : "";
       if (contractorValue && contractorKey !== contractorValue) {
         return;
       }
-      const workerName = entry.worker?.name ?? parseNexusName(entry.work_type_text) ?? "";
+      const workerName = entry.worker?.name ?? getNexusName(entry) ?? "";
       if (workerName) {
         set.add(workerName);
       }
@@ -561,6 +568,8 @@ export default async function ReportsPage({
                   to: toValue,
                   category: categoryValue,
                   workType: workTypeValue,
+                  contractor: contractorValue,
+                  worker: workerValue,
                   memo: memoValue,
                   memoMatch: memoMatchValue,
                 }).toString()}`

@@ -6,8 +6,10 @@ type EntryRow = {
   entry_date: string;
   contractor_id: string | null;
   worker_id: string | null;
+  nexus_user_id: string | null;
   contractor: { partner_id: string; name: string } | null;
   worker: { id: string; name: string } | null;
+  nexus_user: { user_id: string; username: string | null } | null;
   work_type_text: string | null;
 };
 
@@ -26,6 +28,11 @@ const CORPORATE_TOKENS = [
   "（同）",
   "(同)",
 ];
+
+const firstOrNull = <T,>(value: T | T[] | null | undefined) => {
+  if (!value) return null;
+  return Array.isArray(value) ? value[0] ?? null : value;
+};
 
 function stripLegalSuffix(name: string) {
   let trimmed = name.trim();
@@ -65,6 +72,15 @@ function parseNexusName(value: string | null) {
   const name = rest.split("/")[0]?.trim() ?? "";
   return name || null;
 }
+
+const getNexusName = (entry: EntryRow) =>
+  entry.nexus_user?.username ??
+  entry.nexus_user_id ??
+  parseNexusName(entry.work_type_text) ??
+  null;
+
+const isNexusEntry = (entry: EntryRow) =>
+  Boolean(entry.nexus_user_id || parseNexusName(entry.work_type_text));
 
 function applyTableBorders(
   worksheet: ExcelJS.Worksheet,
@@ -156,7 +172,7 @@ export async function GET(request: Request) {
     const { data, error } = await supabase
       .from("attendance_entries")
       .select(
-        "entry_date, contractor_id, worker_id, work_type_text, partners(partner_id,name), workers(id,name)"
+        "entry_date, contractor_id, worker_id, nexus_user_id, work_type_text, partners(partner_id,name), workers(id,name), users(user_id,username)"
       )
       .eq("project_id", selectedSiteId)
       .gte("entry_date", rangeStart)
@@ -177,22 +193,23 @@ export async function GET(request: Request) {
     entry_date: entry.entry_date,
     contractor_id: entry.contractor_id ?? null,
     worker_id: entry.worker_id ?? null,
-    contractor: entry.partners,
-    worker: entry.workers,
+    nexus_user_id: entry.nexus_user_id ?? null,
+    contractor: firstOrNull(entry.partners),
+    worker: firstOrNull(entry.workers),
+    nexus_user: firstOrNull(entry.users),
     work_type_text: entry.work_type_text,
   })) as EntryRow[];
 
   const contractorCounts = new Map<string, { name: string; dayKeys: Set<string> }>();
   typedEntries.forEach((entry) => {
-    const memoHasNexus = entry.work_type_text?.includes("ネクサス");
     const contractorKey = entry.contractor
       ? entry.contractor.partner_id
-      : memoHasNexus
+      : isNexusEntry(entry)
         ? "__NEXUS__"
         : null;
     const contractorName = entry.contractor
       ? stripLegalSuffix(entry.contractor.name)
-      : memoHasNexus
+      : isNexusEntry(entry)
         ? "ネクサス"
         : entry.contractor_id ?? null;
 
@@ -206,11 +223,11 @@ export async function GET(request: Request) {
     }
 
     if (contractorKey === "__NEXUS__") {
-      const nexusName = parseNexusName(entry.work_type_text) ?? "";
-      if (nexusName) {
+      const nexusKey = entry.nexus_user_id ?? getNexusName(entry) ?? "";
+      if (nexusKey) {
         contractorCounts
           .get(contractorKey)
-          ?.dayKeys.add(`${entry.entry_date}::${nexusName}`);
+          ?.dayKeys.add(`${entry.entry_date}::${nexusKey}`);
       }
       return;
     }
@@ -236,13 +253,12 @@ export async function GET(request: Request) {
     { contractorName: string; workerName: string; dates: Set<string> }
   >();
   typedEntries.forEach((entry) => {
-    const nexusName = parseNexusName(entry.work_type_text);
     const contractorName = entry.contractor
       ? stripLegalSuffix(entry.contractor.name)
-      : nexusName
+      : isNexusEntry(entry)
         ? "ネクサス"
         : entry.contractor_id ?? null;
-    const workerName = entry.worker?.name ?? nexusName ?? entry.worker_id;
+    const workerName = entry.worker?.name ?? getNexusName(entry) ?? entry.worker_id;
     if (!contractorName || !workerName) {
       return;
     }

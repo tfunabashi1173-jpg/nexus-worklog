@@ -53,6 +53,7 @@ create table if not exists attendance_entries (
   project_id varchar not null,
   contractor_id varchar references partners(partner_id) on delete set null,
   worker_id uuid references workers(id) on delete restrict,
+  nexus_user_id varchar references users(user_id) on delete set null,
   work_type_id uuid references work_types(id) on delete set null,
   work_type_text text,
   created_by varchar,
@@ -62,6 +63,10 @@ create table if not exists attendance_entries (
 
 create index if not exists attendance_entries_project_date_idx
   on attendance_entries(project_id, entry_date);
+
+create unique index if not exists attendance_entries_nexus_unique
+  on attendance_entries(entry_date, project_id, nexus_user_id)
+  where nexus_user_id is not null;
 
 create table if not exists guest_links (
   token text primary key,

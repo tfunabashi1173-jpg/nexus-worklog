@@ -211,13 +211,6 @@ export default function AttendanceForm({
     return { name, memo };
   };
 
-  const buildNexusMemo = (row: EntryRow) => {
-    const memo = row.workTypeText.trim();
-    const nexusUser = nexusUsers.find((user) => user.user_id === row.nexusUserId);
-    const display = nexusUser?.username ?? row.nexusUserId;
-    return memo ? `ネクサス / ${display} / ${memo}` : `ネクサス / ${display}`;
-  };
-
   const normalizeRow = (row: EntryRow) => ({
     contractorId: row.contractorId,
     workerId: row.workerId,
@@ -316,7 +309,7 @@ export default function AttendanceForm({
           row.workerId && row.workerId === row.contractorId ? "" : row.workerId;
         const worker = workerMap[normalizedWorkerId];
         const isNexus = row.contractorId === NEXUS_OPTION.partner_id;
-        const memoWithNexus = isNexus ? buildNexusMemo(row) : row.workTypeText.trim();
+        const memoText = row.workTypeText.trim();
         return {
           entry_date: selectedDate,
           project_id: selectedSiteId,
@@ -324,8 +317,9 @@ export default function AttendanceForm({
             ? null
             : row.contractorId || worker?.contractor_id || null,
           worker_id: isNexus ? null : normalizedWorkerId || null,
+          nexus_user_id: isNexus ? row.nexusUserId || null : null,
           work_type_id: row.workTypeId || null,
-          work_type_text: memoWithNexus || null,
+          work_type_text: memoText || null,
         };
       });
 
@@ -429,8 +423,10 @@ export default function AttendanceForm({
       }
       const nextRows: SortedEntryRow[] = entries.map(
         (entry: any, order: number): SortedEntryRow => {
-        const nexusMemo = parseNexusMemo(entry.work_type_text ?? null);
-        const isNexus = Boolean(nexusMemo);
+        const nexusMemo = entry.nexus_user_id
+          ? null
+          : parseNexusMemo(entry.work_type_text ?? null);
+        const isNexus = Boolean(entry.nexus_user_id || nexusMemo);
         const matchUser = nexusMemo
           ? nexusUsers.find(
               (user) =>
@@ -449,10 +445,12 @@ export default function AttendanceForm({
               ? NEXUS_OPTION.partner_id
               : entry.contractor_id ?? "",
             workerId: isNexus ? "" : entry.worker_id ?? "",
-            nexusUserId: matchUser?.user_id ?? "",
+            nexusUserId: entry.nexus_user_id ?? matchUser?.user_id ?? "",
             workCategoryId: workType?.category_id ?? "",
             workTypeId: entry.work_type_id ?? "",
-            workTypeText: isNexus ? nexusMemo?.memo ?? "" : entry.work_type_text ?? "",
+            workTypeText: isNexus
+              ? entry.work_type_text ?? nexusMemo?.memo ?? ""
+              : entry.work_type_text ?? "",
           }),
           isNexus,
         };

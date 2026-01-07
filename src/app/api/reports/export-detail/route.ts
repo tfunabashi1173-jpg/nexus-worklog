@@ -159,7 +159,7 @@ export async function GET(request: Request) {
     const { data, error } = await supabase
       .from("attendance_entries")
       .select(
-        "entry_date, contractor_id, worker_id, work_type_text, partners(partner_id,name), workers(id,name), work_types(id,name,category_id, work_categories(name))"
+        "entry_date, contractor_id, worker_id, nexus_user_id, work_type_text, partners(partner_id,name), workers(id,name), users(user_id,username), work_types(id,name,category_id, work_categories(name))"
       )
       .eq("project_id", selectedSiteId)
       .gte("entry_date", fromValue)
@@ -191,19 +191,23 @@ export async function GET(request: Request) {
       if (!memoMatches(memoText, terms, memoMatchValue)) {
         return false;
       }
-      const memoHasNexus = entry.work_type_text?.includes("ネクサス");
       const contractor = firstOrNull(entry.partners);
       const contractorKey = contractor
         ? contractor.partner_id
-        : memoHasNexus
+        : entry.nexus_user_id || parseNexusName(entry.work_type_text ?? null)
           ? "__NEXUS__"
           : "";
       if (contractorValue && contractorKey !== contractorValue) {
         return false;
       }
+      const nexusName =
+        firstOrNull(entry.users)?.username ??
+        entry.nexus_user_id ??
+        parseNexusName(entry.work_type_text ?? null) ??
+        "";
       const workerName =
         firstOrNull(entry.workers)?.name ??
-        parseNexusName(entry.work_type_text ?? "") ??
+        nexusName ??
         entry.worker_id ??
         "";
       if (workerValue && workerName !== workerValue) {
@@ -214,8 +218,12 @@ export async function GET(request: Request) {
     .map((entry) => {
       const rawMemo = entry.work_type_text ?? "";
       const memoText = stripNexusMemo(rawMemo);
-      const nexusName = parseNexusName(rawMemo);
       const contractor = firstOrNull(entry.partners);
+      const nexusName =
+        firstOrNull(entry.users)?.username ??
+        entry.nexus_user_id ??
+        parseNexusName(rawMemo) ??
+        "";
       const contractorName = contractor
         ? stripLegalSuffix(contractor.name)
         : nexusName
