@@ -515,7 +515,7 @@ export default function ReportsControls({
                 </select>
               </div>
             </div>
-            <div className="flex flex-wrap items-start gap-3">
+            <div className="flex flex-wrap items-end gap-3">
               <div className="w-[420px]">
                 <label className="text-sm font-medium">備考キーワード</label>
                 <input
@@ -530,9 +530,6 @@ export default function ReportsControls({
                   placeholder="例: 仕上げ -手直し"
                   className="mt-1 h-9 w-full rounded border border-zinc-300 px-2 text-sm"
                 />
-                <p className="mt-1 text-xs text-zinc-500">
-                  半角/全角スペース区切り。除外は「-除外語」。
-                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium">一致条件</label>
@@ -561,6 +558,9 @@ export default function ReportsControls({
                 </button>
               </div>
             </div>
+            <p className="text-xs text-zinc-500">
+              半角/全角スペース区切り。除外は「-除外語」。
+            </p>
           </div>
         )}
       </div>
