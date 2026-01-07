@@ -139,10 +139,11 @@ export async function GET(request: Request) {
   const terms = parseMemoTerms(memoValue);
   const rows = (entries ?? [])
     .filter((entry) => {
-      if (categoryValue && entry.work_types?.category_id !== categoryValue) {
+      const workType = entry.work_types?.[0] ?? null;
+      if (categoryValue && workType?.category_id !== categoryValue) {
         return false;
       }
-      if (workTypeValue && entry.work_types?.id !== workTypeValue) {
+      if (workTypeValue && workType?.id !== workTypeValue) {
         return false;
       }
       return memoMatches(entry.work_type_text ?? "", terms, memoMatchValue);
@@ -156,12 +157,13 @@ export async function GET(request: Request) {
           ? "ネクサス"
           : entry.contractor_id ?? "";
       const workerName = entry.workers?.name ?? nexusName ?? entry.worker_id ?? "";
+      const workType = entry.work_types?.[0] ?? null;
       return [
         entry.entry_date,
         contractorName,
         workerName,
-        entry.work_types?.work_categories?.name ?? "",
-        entry.work_types?.name ?? "",
+        workType?.work_categories?.[0]?.name ?? "",
+        workType?.name ?? "",
         memoText,
       ];
     });
