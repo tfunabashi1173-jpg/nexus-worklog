@@ -218,7 +218,7 @@ export default function GuestLinkForm({
                   setProjectId("");
                 }
               }}
-              className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm"
+              className="mt-1 h-10 w-full rounded border border-zinc-300 px-3 text-sm"
             />
           </div>
           <div>
@@ -226,7 +226,7 @@ export default function GuestLinkForm({
             <select
               value={projectId}
               onChange={(event) => setProjectId(event.target.value)}
-              className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm"
+              className="mt-1 h-10 w-full rounded border border-zinc-300 px-3 text-sm"
             >
               <option value="">現場を選択してください</option>
               {filteredSites.map((site) => (
@@ -242,9 +242,9 @@ export default function GuestLinkForm({
               type="date"
               value={expiresAt}
               onChange={(event) => setExpiresAt(event.target.value)}
-              className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm"
+              className="mt-1 h-10 w-full rounded border border-zinc-300 px-3 text-sm"
             />
-            <p className="mt-1 text-xs text-zinc-500">未設定なら無期限。</p>
+            <p className="mt-1 h-4 text-xs text-zinc-500">未設定なら無期限。</p>
           </div>
           <button
             type="submit"
@@ -292,7 +292,7 @@ export default function GuestLinkForm({
                   type="text"
                   readOnly
                   value={buildUrl(item.token)}
-                  className="min-w-[280px] flex-1 rounded border border-zinc-300 px-2 py-1 text-xs"
+                  className="min-w-[280px] flex-1 rounded border border-zinc-300 px-2 text-xs h-8"
                 />
                 <input
                   type="date"
@@ -306,26 +306,26 @@ export default function GuestLinkForm({
                       )
                     )
                   }
-                  className="rounded border border-zinc-300 px-2 py-1 text-xs"
+                  className="rounded border border-zinc-300 px-2 text-xs h-8"
                 />
                 <button
                   type="button"
                   onClick={() => handleUpdateExpiry(item.token)}
-                  className="rounded border border-zinc-300 px-3 py-1 text-xs transition-all duration-150 ease-out hover:bg-zinc-100 active:scale-95"
+                  className="h-8 rounded border border-zinc-300 px-3 text-xs transition-all duration-150 ease-out hover:bg-zinc-100 active:scale-95"
                 >
                   期限更新
                 </button>
                 <button
                   type="button"
                   onClick={() => handleCopy(item.token)}
-                  className="rounded border border-zinc-300 px-3 py-1 text-xs transition-all duration-150 ease-out hover:bg-zinc-100 active:scale-95"
+                  className="h-8 rounded border border-zinc-300 px-3 text-xs transition-all duration-150 ease-out hover:bg-zinc-100 active:scale-95"
                 >
                   コピー
                 </button>
                 <button
                   type="button"
                   onClick={() => handleDelete(item.token)}
-                  className="rounded border border-red-300 px-3 py-1 text-xs text-red-600 transition-all duration-150 ease-out hover:bg-red-50 active:scale-95"
+                  className="h-8 rounded border border-red-300 px-3 text-xs text-red-600 transition-all duration-150 ease-out hover:bg-red-50 active:scale-95"
                 >
                   削除
                 </button>
