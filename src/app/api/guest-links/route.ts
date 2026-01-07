@@ -12,9 +12,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const { projectId, expiresAt } = (await request.json()) as {
+  const { projectId, expiresAt, canEditAttendance } = (await request.json()) as {
     projectId?: string;
     expiresAt?: string | null;
+    canEditAttendance?: boolean;
   };
   if (!projectId) {
     return NextResponse.json({ error: "invalid" }, { status: 400 });
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
 
   const { data: existingLink } = await supabase
     .from("guest_links")
-    .select("token, expires_at")
+    .select("token, expires_at, can_edit_attendance")
     .eq("project_id", projectId)
     .eq("is_deleted", false)
     .order("created_at", { ascending: false })
@@ -104,6 +105,7 @@ export async function POST(request: Request) {
       token,
       project_id: projectId,
       expires_at: normalizedExpiresAt,
+      can_edit_attendance: Boolean(canEditAttendance),
     });
 
   if (error) {

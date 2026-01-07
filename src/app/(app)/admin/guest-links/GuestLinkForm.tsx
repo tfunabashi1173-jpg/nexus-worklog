@@ -15,6 +15,7 @@ type GuestLinkItem = {
   projectId: string;
   siteName: string;
   expiresAt?: string | null;
+  canEditAttendance?: boolean;
 };
 
 export default function GuestLinkForm({
@@ -33,6 +34,7 @@ export default function GuestLinkForm({
   const [monthValue, setMonthValue] = useState(defaultMonth);
   const [projectId, setProjectId] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
+  const [canEditAttendance, setCanEditAttendance] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [link, setLink] = useState<string | null>(null);
   const [linkItems, setLinkItems] = useState<GuestLinkItem[]>(links);
@@ -79,6 +81,7 @@ export default function GuestLinkForm({
       body: JSON.stringify({
         projectId,
         expiresAt: expiresAt.trim() ? expiresAt.trim() : null,
+        canEditAttendance,
       }),
     });
     setSaving(false);
@@ -114,6 +117,7 @@ export default function GuestLinkForm({
             projectId,
             siteName: site?.site_name ?? projectId,
             expiresAt: expiresAt.trim() ? expiresAt.trim() : null,
+            canEditAttendance,
           },
           ...prev,
         ];
@@ -151,9 +155,11 @@ export default function GuestLinkForm({
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        expiresAt: target.expiresAt && target.expiresAt.trim()
-          ? target.expiresAt.trim()
-          : null,
+        expiresAt:
+          target.expiresAt && target.expiresAt.trim()
+            ? target.expiresAt.trim()
+            : null,
+        canEditAttendance: Boolean(target.canEditAttendance),
       }),
     });
     if (!response.ok) {
@@ -257,7 +263,20 @@ export default function GuestLinkForm({
           <div className="grid gap-3 md:grid-cols-[220px_1fr_220px_auto]">
             <div className="hidden md:block" />
             <div className="hidden md:block" />
-            <p className="text-xs text-zinc-500">未設定なら無期限。</p>
+            <div className="flex items-center gap-2 text-xs text-zinc-600">
+              <input
+                id="guest-edit"
+                type="checkbox"
+                checked={canEditAttendance}
+                onChange={(event) => setCanEditAttendance(event.target.checked)}
+                className="h-4 w-4 rounded border-zinc-300"
+              />
+              <label htmlFor="guest-edit" className="select-none">
+                入場記録の編集を許可
+              </label>
+              <span className="text-zinc-400">/</span>
+              <span className="text-zinc-500">未設定なら無期限</span>
+            </div>
             <div className="hidden md:block" />
           </div>
         </div>
@@ -315,12 +334,29 @@ export default function GuestLinkForm({
                   }
                   className="rounded border border-zinc-300 px-2 text-xs h-8"
                 />
+                <label className="flex items-center gap-2 text-xs text-zinc-600">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(item.canEditAttendance)}
+                    onChange={(event) =>
+                      setLinkItems((prev) =>
+                        prev.map((link) =>
+                          link.token === item.token
+                            ? { ...link, canEditAttendance: event.target.checked }
+                            : link
+                        )
+                      )
+                    }
+                    className="h-4 w-4 rounded border-zinc-300"
+                  />
+                  入場記録編集
+                </label>
                 <button
                   type="button"
                   onClick={() => handleUpdateExpiry(item.token)}
                   className="h-8 rounded border border-zinc-300 px-3 text-xs transition-all duration-150 ease-out hover:bg-zinc-100 active:scale-95"
                 >
-                  期限更新
+                  設定更新
                 </button>
                 <button
                   type="button"

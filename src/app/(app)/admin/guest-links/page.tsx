@@ -26,7 +26,9 @@ export default async function GuestLinksPage() {
 
   const { data: guestLinks } = await supabase
     .from("guest_links")
-    .select("token, project_id, created_at, expires_at, projects(site_name)")
+    .select(
+      "token, project_id, created_at, expires_at, can_edit_attendance, projects(site_name)"
+    )
     .eq("is_deleted", false)
     .order("created_at", { ascending: false });
 
@@ -37,6 +39,7 @@ export default async function GuestLinksPage() {
             token: string;
             project_id: string;
             expires_at: string | null;
+            can_edit_attendance: boolean | null;
             projects: { site_name: string } | { site_name: string }[] | null;
           }>
         | null
@@ -47,6 +50,7 @@ export default async function GuestLinksPage() {
         ? link.projects[0]?.site_name ?? link.project_id
         : link.projects?.site_name ?? link.project_id,
       expiresAt: link.expires_at,
+      canEditAttendance: Boolean(link.can_edit_attendance),
     })) ?? [];
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";

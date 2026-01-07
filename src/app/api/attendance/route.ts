@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  if (session.role === "guest") {
+  if (session.role === "guest" && !session.guestCanEdit) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
@@ -156,7 +156,7 @@ export async function DELETE(request: Request) {
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  if (session.role === "guest") {
+  if (session.role === "guest" && !session.guestCanEdit) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 

@@ -53,8 +53,9 @@ export async function PATCH(
     return NextResponse.json({ error: "invalid" }, { status: 400 });
   }
 
-  const { expiresAt } = (await request.json()) as {
+  const { expiresAt, canEditAttendance } = (await request.json()) as {
     expiresAt?: string | null;
+    canEditAttendance?: boolean;
   };
   const normalizedExpiresAt =
     expiresAt && expiresAt.trim() ? expiresAt.trim() : null;
@@ -80,7 +81,13 @@ export async function PATCH(
 
   const { error } = await supabase
     .from("guest_links")
-    .update({ expires_at: normalizedExpiresAt })
+    .update({
+      expires_at: normalizedExpiresAt,
+      can_edit_attendance:
+        typeof canEditAttendance === "boolean"
+          ? canEditAttendance
+          : undefined,
+    })
     .eq("token", token);
 
   if (error) {

@@ -105,7 +105,7 @@ export default async function DashboardPage() {
             ? session.guestProjectId ?? null
             : settings?.default_project_id ?? null
         }
-        readOnly={session.role === "guest"}
+        readOnly={session.role === "guest" && !session.guestCanEdit}
       />
     </div>
   );

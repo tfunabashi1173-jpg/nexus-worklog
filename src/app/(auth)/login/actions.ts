@@ -31,7 +31,7 @@ export async function login(
     const supabase = createSupabaseServerClient();
     const { data: guestLink, error: guestError } = await supabase
       .from("guest_links")
-      .select("project_id, is_deleted, expires_at")
+      .select("project_id, is_deleted, expires_at, can_edit_attendance")
       .eq("token", guestToken)
       .maybeSingle();
 
@@ -51,6 +51,7 @@ export async function login(
       username: "ゲスト",
       role: "guest",
       guestProjectId: guestLink.project_id,
+      guestCanEdit: guestLink.can_edit_attendance ?? false,
     });
     redirect("/");
   }
