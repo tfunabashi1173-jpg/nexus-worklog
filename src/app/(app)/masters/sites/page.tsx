@@ -1,6 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getSession } from "@/lib/auth";
-import { createSite, deleteSite, updateSite } from "@/app/(app)/masters/sites/actions";
+import { updateSite } from "@/app/(app)/masters/sites/actions";
 
 type SearchParams = {
   scope?: "range" | "all";
@@ -70,17 +70,12 @@ export default async function SitesPage({
   const rangeStart = resolvedParams?.from ?? monthStart;
   const rangeEnd = resolvedParams?.to ?? monthEnd;
 
-  const [{ data: sites }, { data: managers }, { data: partners }] = await Promise.all([
+  const [{ data: sites }, { data: partners }] = await Promise.all([
     supabase
       .from("projects")
       .select("project_id, site_name, start_date, end_date, status, customer_id")
       .or("is_deleted.is.false,is_deleted.is.null")
       .order("site_name"),
-    supabase
-      .from("users")
-      .select("user_id, username")
-      .or("is_deleted.is.false,is_deleted.is.null")
-      .order("user_id"),
     supabase
       .from("partners")
       .select("partner_id, name")
@@ -99,58 +94,10 @@ export default async function SitesPage({
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">現場</h1>
-        <p className="text-sm text-zinc-600">現場と工期を管理します。</p>
+        <p className="text-sm text-zinc-600">
+          期間の編集のみ可能です。新規登録と削除は工事管理システムから行ってください。
+        </p>
       </div>
-
-      <form action={createSite} className="rounded-lg border bg-white p-4">
-        <h2 className="text-lg font-semibold">新規登録</h2>
-        <div className="mt-3 grid gap-3 md:grid-cols-5">
-          <input
-            name="name"
-            placeholder="現場名"
-            className="rounded border border-zinc-300 px-3 py-2 text-sm"
-            required
-          />
-          <select
-            name="managerId"
-            className="rounded border border-zinc-300 px-3 py-2 text-sm"
-          >
-            <option value="">担当者</option>
-            {managers?.map((manager) => (
-              <option key={manager.user_id} value={manager.user_id}>
-                {manager.username ?? manager.user_id}
-              </option>
-            ))}
-          </select>
-          <select
-            name="customerId"
-            className="rounded border border-zinc-300 px-3 py-2 text-sm"
-          >
-            <option value="">得意先</option>
-            {partners?.map((partner) => (
-              <option key={partner.partner_id} value={partner.partner_id}>
-                {partner.name}
-              </option>
-            ))}
-          </select>
-          <input
-            name="startDate"
-            type="date"
-            className="rounded border border-zinc-300 px-3 py-2 text-sm"
-          />
-          <input
-            name="endDate"
-            type="date"
-            className="rounded border border-zinc-300 px-3 py-2 text-sm"
-          />
-          <button
-            type="submit"
-            className="rounded bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition-all duration-150 ease-out hover:bg-zinc-800 active:scale-95"
-          >
-            登録
-          </button>
-        </div>
-      </form>
 
       <form className="flex flex-wrap items-end gap-3 rounded-lg border bg-white p-4">
         <div>
@@ -208,27 +155,14 @@ export default async function SitesPage({
                 <td className="px-4 py-2">
                   <form id={`site-${site.project_id}`} action={updateSite}>
                     <input type="hidden" name="siteId" value={site.project_id} />
-                    <input
-                      name="name"
-                      defaultValue={site.site_name}
-                      className="w-full rounded border border-zinc-300 px-2 py-1"
-                    />
                   </form>
+                  <span className="text-sm">{site.site_name}</span>
                 </td>
                 <td className="px-4 py-2">
-                  <select
-                    name="customerId"
-                    defaultValue={site.customer_id ?? ""}
-                    className="rounded border border-zinc-300 px-2 py-1"
-                    form={`site-${site.project_id}`}
-                  >
-                    <option value="">-</option>
-                    {partners?.map((partner) => (
-                      <option key={partner.partner_id} value={partner.partner_id}>
-                        {partner.name}
-                      </option>
-                    ))}
-                  </select>
+                  <span className="text-sm">
+                    {partners?.find((partner) => partner.partner_id === site.customer_id)
+                      ?.name ?? "-"}
+                  </span>
                 </td>
                 <td className="px-4 py-2 text-sm text-zinc-600">
                   {site.status === "精算完了"
@@ -262,15 +196,6 @@ export default async function SitesPage({
                     >
                       更新
                     </button>
-                    <form action={deleteSite}>
-                      <input type="hidden" name="siteId" value={site.project_id} />
-                      <button
-                        type="submit"
-                        className="rounded border border-red-300 px-3 py-1 text-xs text-red-600 transition-all duration-150 ease-out hover:bg-red-50 active:scale-95"
-                      >
-                        削除
-                      </button>
-                    </form>
                   </div>
                 </td>
               </tr>

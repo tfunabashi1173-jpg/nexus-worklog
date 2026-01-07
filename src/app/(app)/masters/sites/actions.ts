@@ -85,12 +85,10 @@ export async function updateSite(formData: FormData) {
   }
 
   const siteId = String(formData.get("siteId") ?? "");
-  const name = String(formData.get("name") ?? "").trim();
   const startDate = String(formData.get("startDate") ?? "").trim();
   const endDate = String(formData.get("endDate") ?? "").trim();
-  const customerId = String(formData.get("customerId") ?? "").trim();
 
-  if (!siteId || !name) {
+  if (!siteId) {
     return;
   }
 
@@ -109,8 +107,6 @@ export async function updateSite(formData: FormData) {
   await supabase
     .from("projects")
     .update({
-      site_name: name,
-      customer_id: customerId || null,
       start_date: startDate || null,
       end_date: endDate || null,
       status: nextStatus,
