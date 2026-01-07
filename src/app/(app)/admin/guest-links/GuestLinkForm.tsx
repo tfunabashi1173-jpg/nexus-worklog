@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import LogArea from "@/components/LogArea";
 
 type Site = {
@@ -39,6 +39,17 @@ export default function GuestLinkForm({
   const [link, setLink] = useState<string | null>(null);
   const [linkItems, setLinkItems] = useState<GuestLinkItem[]>(links);
   const [saving, setSaving] = useState(false);
+  const messageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showMessage = (value: string) => {
+    setMessage(value);
+    if (messageTimeoutRef.current) {
+      clearTimeout(messageTimeoutRef.current);
+    }
+    messageTimeoutRef.current = setTimeout(() => {
+      setMessage(null);
+      messageTimeoutRef.current = null;
+    }, 3000);
+  };
   const filterSitesByMonth = (value: string) => {
     const monthStart = new Date(`${value}-01T00:00:00`);
     const monthEnd = new Date(
@@ -68,10 +79,10 @@ export default function GuestLinkForm({
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setMessage(null);
+    showMessage("");
     setLink(null);
     if (!projectId) {
-      setMessage("現場を選択してください。");
+      showMessage("現場を選択してください。");
       return;
     }
     setSaving(true);
@@ -92,7 +103,7 @@ export default function GuestLinkForm({
       existing?: boolean;
     };
     if (!response.ok) {
-      setMessage(
+      showMessage(
         data.details
           ? `ゲストURLの発行に失敗しました。(${data.details})`
           : "ゲストURLの発行に失敗しました。"
@@ -123,7 +134,7 @@ export default function GuestLinkForm({
         ];
       });
     }
-    setMessage(
+    showMessage(
       data.existing ? "作成済みのゲストURLを表示しました。" : "ゲストURLを発行しました。"
     );
   };
@@ -136,14 +147,14 @@ export default function GuestLinkForm({
       method: "DELETE",
     });
     if (!response.ok) {
-      setMessage("ゲストURLの削除に失敗しました。");
+      showMessage("ゲストURLの削除に失敗しました。");
       return;
     }
     setLinkItems((prev) => prev.filter((item) => item.token !== token));
     if (link?.includes(token)) {
       setLink(null);
     }
-    setMessage("ゲストURLを削除しました。");
+    showMessage("ゲストURLを削除しました。");
   };
 
   const handleUpdateExpiry = async (token: string) => {
@@ -167,23 +178,23 @@ export default function GuestLinkForm({
         | { error?: string }
         | null;
       if (payload?.error === "expired") {
-        setMessage("有効期限が切れているため更新できません。");
+        showMessage("有効期限が切れているため更新できません。");
         setLinkItems((prev) => prev.filter((item) => item.token !== token));
         return;
       }
-      setMessage("有効期限の更新に失敗しました。");
+      showMessage("設定の更新に失敗しました。");
       return;
     }
-    setMessage("有効期限を更新しました。");
+    showMessage("設定を更新しました。");
   };
 
   const handleCopy = async (token: string) => {
     const url = buildUrl(token);
     try {
       await navigator.clipboard.writeText(url);
-      setMessage("URLをコピーしました。");
+      showMessage("URLをコピーしました。");
     } catch {
-      setMessage("コピーに失敗しました。");
+      showMessage("コピーに失敗しました。");
     }
   };
 
