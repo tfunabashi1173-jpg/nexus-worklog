@@ -156,7 +156,8 @@ export async function GET(request: Request) {
         : nexusName
           ? "ネクサス"
           : entry.contractor_id ?? "";
-      const workerName = entry.workers?.name ?? nexusName ?? entry.worker_id ?? "";
+      const workerName =
+        entry.workers?.[0]?.name ?? nexusName ?? entry.worker_id ?? "";
       const workType = entry.work_types?.[0] ?? null;
       return [
         entry.entry_date,
