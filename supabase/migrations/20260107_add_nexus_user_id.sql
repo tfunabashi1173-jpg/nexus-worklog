@@ -2,8 +2,7 @@ alter table attendance_entries
   add column if not exists nexus_user_id varchar references users(user_id) on delete set null;
 
 create unique index if not exists attendance_entries_nexus_unique
-  on attendance_entries(entry_date, project_id, nexus_user_id)
-  where nexus_user_id is not null;
+  on attendance_entries(entry_date, project_id, nexus_user_id);
 
 with normalized as (
   select

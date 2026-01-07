@@ -65,8 +65,7 @@ create index if not exists attendance_entries_project_date_idx
   on attendance_entries(project_id, entry_date);
 
 create unique index if not exists attendance_entries_nexus_unique
-  on attendance_entries(entry_date, project_id, nexus_user_id)
-  where nexus_user_id is not null;
+  on attendance_entries(entry_date, project_id, nexus_user_id);
 
 create table if not exists guest_links (
   token text primary key,
