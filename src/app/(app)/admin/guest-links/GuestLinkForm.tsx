@@ -6,6 +6,8 @@ import LogArea from "@/components/LogArea";
 type Site = {
   project_id: string;
   site_name: string;
+  start_date: string | null;
+  end_date: string | null;
 };
 
 type GuestLinkItem = {
@@ -23,11 +25,42 @@ export default function GuestLinkForm({
   links: GuestLinkItem[];
   baseUrl: string;
 }) {
-  const [projectId, setProjectId] = useState(sites[0]?.project_id ?? "");
+  const today = new Date();
+  const defaultMonth = `${today.getFullYear()}-${String(
+    today.getMonth() + 1
+  ).padStart(2, "0")}`;
+  const [monthValue, setMonthValue] = useState(defaultMonth);
+  const [projectId, setProjectId] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [link, setLink] = useState<string | null>(null);
   const [linkItems, setLinkItems] = useState<GuestLinkItem[]>(links);
   const [saving, setSaving] = useState(false);
+  const filterSitesByMonth = (value: string) => {
+    const monthStart = new Date(`${value}-01T00:00:00`);
+    const monthEnd = new Date(
+      monthStart.getFullYear(),
+      monthStart.getMonth() + 1,
+      0,
+      23,
+      59,
+      59
+    );
+    return sites.filter((site) => {
+      if (!site.start_date && !site.end_date) {
+        return true;
+      }
+      const start = site.start_date ? new Date(site.start_date) : null;
+      const end = site.end_date ? new Date(site.end_date) : null;
+      if (start && monthEnd < start) {
+        return false;
+      }
+      if (end && monthStart > end) {
+        return false;
+      }
+      return true;
+    });
+  };
+  const filteredSites = filterSitesByMonth(monthValue);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -137,13 +170,31 @@ export default function GuestLinkForm({
         <h2 className="text-lg font-semibold">ゲストURL発行</h2>
         <div className="mt-3 grid gap-3 md:grid-cols-[1fr_auto]">
           <div>
+            <label className="text-sm font-medium">対象月</label>
+            <input
+              name="month"
+              type="month"
+              value={monthValue}
+              onChange={(event) => {
+                const value = event.target.value;
+                setMonthValue(value);
+                const nextSites = filterSitesByMonth(value);
+                if (projectId && !nextSites.some((site) => site.project_id === projectId)) {
+                  setProjectId("");
+                }
+              }}
+              className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
             <label className="text-sm font-medium">対象現場</label>
             <select
               value={projectId}
               onChange={(event) => setProjectId(event.target.value)}
               className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm"
             >
-              {sites.map((site) => (
+              <option value="">現場を選択してください</option>
+              {filteredSites.map((site) => (
                 <option key={site.project_id} value={site.project_id}>
                   {site.site_name}
                 </option>

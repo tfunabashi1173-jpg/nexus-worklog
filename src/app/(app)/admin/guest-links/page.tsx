@@ -18,7 +18,7 @@ export default async function GuestLinksPage() {
   const supabase = createSupabaseServerClient();
   const { data: sites } = await supabase
     .from("projects")
-    .select("project_id, site_name")
+    .select("project_id, site_name, start_date, end_date")
     .or("is_deleted.is.false,is_deleted.is.null")
     .order("site_name");
 
