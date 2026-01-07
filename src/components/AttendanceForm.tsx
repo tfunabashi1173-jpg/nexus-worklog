@@ -302,6 +302,31 @@ export default function AttendanceForm({
       return;
     }
 
+    const rowsToValidate = rows.filter((row) => {
+      if (row.contractorId || row.workerId || row.nexusUserId) {
+        return true;
+      }
+      if (row.workCategoryId || row.workTypeId) {
+        return true;
+      }
+      return Boolean(row.workTypeText.trim());
+    });
+    const invalidRowIndex = rowsToValidate.findIndex((row) => {
+      if (!row.contractorId) {
+        return true;
+      }
+      if (row.contractorId === NEXUS_OPTION.partner_id) {
+        return !row.nexusUserId;
+      }
+      return !row.workerId;
+    });
+    if (invalidRowIndex !== -1) {
+      setMessage(`${invalidRowIndex + 1}行目: 業者名と作業員は必須です。`);
+      messageTimeoutRef.current = setTimeout(() => setMessage(null), 3000);
+      setSaving(false);
+      return;
+    }
+
     const payload = rows
       .filter((row) => row.workerId || row.nexusUserId)
       .map((row) => {
@@ -596,7 +621,7 @@ export default function AttendanceForm({
                   row.contractorId &&
                   row.contractorId !== NEXUS_OPTION.partner_id
                     ? workersByContractor[row.contractorId] ?? []
-                    : workers;
+                    : [];
                 const isInactive = selectedWorker
                   ? isInactiveMoreThanYear(selectedWorker.last_entry_date)
                   : false;
@@ -659,7 +684,7 @@ export default function AttendanceForm({
                                 nexusUserId: event.target.value,
                               })
                             }
-                            disabled={readOnly}
+                            disabled={readOnly || !row.contractorId}
                             className="w-full rounded border border-zinc-300 px-2 py-1"
                           >
                             <option value="">選択</option>
@@ -683,7 +708,7 @@ export default function AttendanceForm({
                                     : worker?.contractor_id ?? row.contractorId,
                               });
                             }}
-                            disabled={readOnly}
+                            disabled={readOnly || !row.contractorId}
                             className={`w-full rounded border px-2 py-1 ${
                               isInactive ? "border-red-400" : "border-zinc-300"
                             }`}
