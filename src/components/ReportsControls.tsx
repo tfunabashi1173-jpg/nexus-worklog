@@ -444,7 +444,7 @@ export default function ReportsControls({
                 </p>
               </div>
               <div>
-                <label className="text-sm font-medium">一致条件</label>
+                <label className="block text-sm font-medium">一致条件</label>
                 <select
                   value={memoMatch}
                   onChange={(event) => {
