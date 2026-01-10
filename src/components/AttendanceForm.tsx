@@ -135,7 +135,12 @@ export default function AttendanceForm({
     workTypeText: "",
     ...preset,
   });
-  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const today = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0"),
+  ].join("-");
   const [selectedDate, setSelectedDate] = useState(today);
   const [selectedSiteId, setSelectedSiteId] = useState(
     defaultSiteId ?? sites[0]?.project_id ?? ""
