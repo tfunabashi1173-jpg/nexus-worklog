@@ -282,6 +282,15 @@ export default function ReportsControls({
     }
   };
 
+  const handleMemoKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      pushParams({ memo });
+      return;
+    }
+    handleResetKey(event, "memo");
+  };
+
   const handleResetAll = () => {
     const initial = initialValuesRef.current;
     setFrom(initial.from);
@@ -524,9 +533,9 @@ export default function ReportsControls({
                   onChange={(event) => {
                     const value = event.target.value;
                     setMemo(value);
-                    pushParams({ memo: value });
                   }}
-                  onKeyDown={(event) => handleResetKey(event, "memo")}
+                  onKeyDown={handleMemoKeyDown}
+                  onBlur={() => pushParams({ memo })}
                   placeholder="例: 仕上げ -手直し"
                   className="mt-1 h-9 w-full rounded border border-zinc-300 px-2 text-sm"
                 />
